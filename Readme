@@ -1,0 +1,14 @@
+minimalistic readme
+.. for details see module/sourcecode documentation
+
+$ erl
+1> c(world).
+{ok,world}
+2> c(dummy).
+{ok,dummy}
+4> dummy:world_start().
+{ok, ..}
+5> dumm:world_state().
+{...}
+6> dummy:world_stop().
+ok.
