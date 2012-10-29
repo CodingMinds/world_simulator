@@ -37,7 +37,7 @@ world_start() ->
     {{2,2}, #field{food=0, blocked=false}}
   ],
   
-  gen_server:start_link({local, world}, world, [Map], []).
+  world:start(Map).
 
 %%----------------------------------------------------------------------
 %% Function: world_stop/0
@@ -54,4 +54,3 @@ world_stop() -> gen_server:cast(world, stop).
 %% Returns: {reply,Reply,NewState}
 %%----------------------------------------------------------------------
 world_state() -> gen_server:call(world, state).
-

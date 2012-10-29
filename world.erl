@@ -147,7 +147,7 @@ handle_call(death, From, State=#state{map=Map, agents=Agents}) ->
 %% Args: 
 %% Returns: {reply, ok, #state} | {reply, {error, Message}, #state}.
 %%----------------------------------------------------------------------
-handle_call({do, Action}, From, State=#state{map=Map, agents=Agents}) ->
+handle_call({do, _Action}, From, State=#state{map=_Map, agents=Agents}) ->
   case lists:keyfind(From, 1, Agents) of
     false ->
       {reply, {error, client_unknown}, State};
