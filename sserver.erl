@@ -87,7 +87,11 @@ loop_user(Socket) ->
     {ok, Data} ->
       String = string:strip(
                  string:strip(
-                   binary_to_list(Data),
+                   string:strip(
+                     string:strip(
+                       binary_to_list(Data),
+                     right, $\n),
+                   right, $\r),
                  right, $\n),
                right, $\r),
       io:format("Socket ~w received ~p~n", [Socket, String]),
