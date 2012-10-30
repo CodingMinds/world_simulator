@@ -129,7 +129,7 @@ handle_call(death, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
         false ->
           Map;
         {_, Field} ->
-          NewField = Field#field{staffed=false},
+          NewField = {Coordinates, Field#field{staffed=false}},
           lists:keyreplace(Coordinates, 1, Map, NewField)
       end
   end,
