@@ -39,11 +39,41 @@ start(UserPort) ->
 accept_user(LSocket) ->
 	{ok, Socket} = gen_tcp:accept(LSocket),
 	spawn(fun() ->
-    gen_tcp:send(Socket, list_to_binary("200 welcome in this world\r\n")),
-	  loop_user(Socket)
+	  handle_connection(Socket)
 	end),
   io:format("Socket ~w connection established~n", [Socket]),
 	accept_user(LSocket).
+
+%%----------------------------------------------------------------------
+%% Function: handle_connection/1
+%% Purpose: Handle incloming connection and create mapping in world
+%% Args: Active socket Socket
+%% Returns: ok
+%%----------------------------------------------------------------------
+handle_connection(Socket) ->
+  case gen_server:call(world, birth) of
+    ok ->
+      gen_tcp:send(Socket, list_to_binary("200 welcome in this world\r\n")),
+      loop_user(Socket);
+    map_full ->
+      gen_tcp:send(Socket, list_to_binary("403 access denied\r\n")),
+      close_connection(Socket);
+    _ ->
+      gen_tcp:send(Socket, list_to_binary("500 server made a boo boo\r\n")),
+      close_connection(Socket)
+  end.
+
+%%----------------------------------------------------------------------
+%% Function: close_connection/1
+%% Purpose: Terminate connection and remove mapping from world
+%% Args: Active socket Socket
+%% Returns: ok
+%%----------------------------------------------------------------------
+close_connection(Socket) ->
+  gen_tcp:send(Socket, list_to_binary("200 good bye\r\n")),
+  gen_tcp:close(Socket),
+  gen_server:call(world, death),
+  io:format("Socket ~w closed~n", [Socket]).
 
 %%----------------------------------------------------------------------
 %% Function: loop_user/1
@@ -55,18 +85,39 @@ accept_user(LSocket) ->
 loop_user(Socket) ->
   case gen_tcp:recv(Socket, 0) of
     {ok, Data} ->
-      String = string:strip(string:strip(binary_to_list(Data), right, $\n), right, $\r),
+      String = string:strip(
+                 string:strip(
+                   binary_to_list(Data),
+                 right, $\n),
+               right, $\r),
       io:format("Socket ~w received ~p~n", [Socket, String]),
+      
       case String of
         "quit" ->
-          gen_tcp:send(Socket, list_to_binary("200 good bye\r\n")),
-          gen_tcp:close(Socket),
-          gen_server:call(world, death),
-          io:format("Socket ~w closed~n", [Socket]),
-          ok;
-        "TODO" ->
-          io:format("Socket ~w TODO~n", [Socket]),
-          gen_tcp:send(Socket, list_to_binary("500 TODO\r\n")),
+          close_connection(Socket);
+        "move 1" ->
+          call_world(Socket, {move, 1}),
+          loop_user(Socket);
+        "move 2" ->
+          call_world(Socket, {move, 2}),
+          loop_user(Socket);
+        "move 3" ->
+          call_world(Socket, {move, 3}),
+          loop_user(Socket);
+        "move 4" ->
+          call_world(Socket, {move, 4}),
+          loop_user(Socket);
+        "move 5" ->
+          call_world(Socket, {move, 5}),
+          loop_user(Socket);
+        "move 6" ->
+          call_world(Socket, {move, 6}),
+          loop_user(Socket);
+        "move 7" ->
+          call_world(Socket, {move, 7}),
+          loop_user(Socket);
+        "move 8" ->
+          call_world(Socket, {move, 8}),
           loop_user(Socket);
         _ ->
           io:format("Socket ~w unknown command~n", [Socket]),
@@ -78,3 +129,49 @@ loop_user(Socket) ->
       io:format("Socket ~w closed~n", [Socket]),
       ok
   end.
+          %gen_tcp:send(Socket, list_to_binary("500 server made a boo boo\r\n")),
+          %gen_tcp:send(Socket, list_to_binary("501 world destroyed\r\n")),
+
+%%----------------------------------------------------------------------
+%% Function: call_world/2
+%% Purpose: Process command Command and send reply on socket Socket.
+%% Args: Active connection socket Socket and command for the world
+%%   Command.
+%% Returns: ok | {error, Reason}.
+%%----------------------------------------------------------------------
+call_world(Socket, Command) ->
+  io:format("Socket ~w ~w~n", [Socket, Command]),
+  case gen_server:call(world, {do, Command}) of
+    ok ->
+      gen_tcp:send(Socket, list_to_binary("201 success\r\n"));
+    {food, _Amount} ->
+      gen_tcp:send(Socket, list_to_binary("202 food 1\r\n"));
+      % TODO: Insert amount in response
+    {error, blocked} ->
+      gen_tcp:send(Socket, list_to_binary("203 blocked\r\n"));
+    {error, staffed} ->
+      gen_tcp:send(Socket, list_to_binary("204 staffed\r\n"));
+    {error, bad_arg} ->
+      gen_tcp:send(Socket, list_to_binary("300 bad argument\r\n"));
+    {error, client_unknown} ->
+      gen_tcp:send(Socket, list_to_binary("403 access denied\r\n"));
+    {error, death} ->
+      gen_tcp:send(Socket, list_to_binary("301 death\r\n"));
+    {error, _Reason} ->
+      gen_tcp:send(Socket, list_to_binary("500 server made a boo boo\r\n"))
+      % TODO: specifie correct response in protocol
+  end.
+
+
+% admin return codes
+%          gen_tcp:send(Socket, list_to_binary("100 map\r\n")),
+%          gen_tcp:send(Socket, list_to_binary("101 world changed\r\n")),
+%          
+%          gen_tcp:send(Socket, list_to_binary("201 success\r\n")),
+%          gen_tcp:send(Socket, list_to_binary("205 failed\r\n")),
+%          
+%          gen_tcp:send(Socket, list_to_binary("403 access denied\r\n")),
+%          gen_tcp:send(Socket, list_to_binary("404 not found\r\n")),
+%          
+%          gen_tcp:send(Socket, list_to_binary("500 server made a boo boo\r\n")),
+%          gen_tcp:send(Socket, list_to_binary("501 world destroyed\r\n")),
