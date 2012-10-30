@@ -96,7 +96,7 @@ handle_call(state, _From, State) ->
 %% Args: -
 %% Returns: {reply, ok, #state} | {reply, map_full, #state}.
 %%----------------------------------------------------------------------
-handle_call(birth, From, State=#state{map=Map, agents=Agents}) ->
+handle_call(birth, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
   Field = free_field(Map),
   case Field of
     false ->
@@ -105,7 +105,7 @@ handle_call(birth, From, State=#state{map=Map, agents=Agents}) ->
       
       NewMap = lists:keyreplace(Coordinates, 1, Map, {Coordinates, Properties#field{staffed=true}}),
       
-      NewState = State#state{map = NewMap, agents = Agents ++ [ {From, Coordinates} ]},
+      NewState = State#state{map = NewMap, agents = Agents ++ [ {Pid, Coordinates} ]},
       
       {reply, ok, NewState}
   end;
@@ -116,26 +116,26 @@ handle_call(birth, From, State=#state{map=Map, agents=Agents}) ->
 %% Args: -
 %% Returns: {reply, ok, #state}.
 %%----------------------------------------------------------------------
-handle_call(death, From, State=#state{map=Map, agents=Agents}) ->
+handle_call(death, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
   % Free cell on map
-  Agent = lists:keyfind(From, 1, Agents),
+  Agent = lists:keyfind(Pid, 1, Agents),
   NewMap = case Agent of
     false ->
       Map;
     _ ->
       {_Pid, Coordinates} = Agent,
-      Field = lists:keyfind(Map, 1, Coordinates),
-      case Field of
+      Result = lists:keyfind(Coordinates, 1, Map),
+      case Result of
         false ->
           Map;
-        _ ->
+        {_, Field} ->
           NewField = Field#field{staffed=false},
-          lists:keyreplace(Map, 1, Coordinates, NewField)
+          lists:keyreplace(Coordinates, 1, Map, NewField)
       end
   end,
   
   % remove from agent list
-  NewAgents = lists:keydelete(From, 1, Agents),
+  NewAgents = lists:keydelete(Pid, 1, Agents),
   
   NewState = State#state{map=NewMap, agents = NewAgents},
   
@@ -144,11 +144,12 @@ handle_call(death, From, State=#state{map=Map, agents=Agents}) ->
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
 %% Purpose: 
-%% Args: 
-%% Returns: {reply, ok, #state} | {reply, {error, Message}, #state}.
+%% Args: -
+%% Returns: {reply, ok, #state} | {reply, {food, Amount}, #state} |
+%%   {reply, {error, Reason}, #state}.
 %%----------------------------------------------------------------------
-handle_call({do, _Action}, From, State=#state{map=_Map, agents=Agents}) ->
-  case lists:keyfind(From, 1, Agents) of
+handle_call({do, _Action}, {Pid, _Tag}, State=#state{map=_Map, agents=Agents}) ->
+  case lists:keyfind(Pid, 1, Agents) of
     false ->
       {reply, {error, client_unknown}, State};
     _ ->
