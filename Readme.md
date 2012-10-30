@@ -14,10 +14,9 @@ This work iss till in progress and only a realy simple alpha !
 
 ## Next steps
 
- * Define first user protocol draft
  * Implement {do, Action}
- * Implement first user protocol draft
  * Test navigation via telnet
+ * Pimp sserver to handle admin port, too
  * Define first admin protocol draft and implement it
  * Prepare some worlds and make them loadable via admin interface
 
@@ -62,6 +61,47 @@ quit
 200 good bye
 Connection closed by foreign host.
 ```
+
+## User Protocol DRAFT
+
+#### Sever
+
+100 map
+.......
+101 world changed
+
+200 welcome in this world
+200 good bye
+201 success
+202 food N
+203 blocked
+204 staffed
+205 failed
+
+300 bad argument
+301 death
+
+400 unknown command
+403 access denied
+404 not found
+
+500 sever made a boo boo
+501 world destroyed
+
+#### Admin
+
+status
+load filename
+kill all
+shutdown
+
+quit
+
+#### Client
+
+move [1-8]
+
+quit
 
 ## Licence
 [GNU General Public License v3](http://www.gnu.org/licenses/gpl.html)
