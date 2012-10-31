@@ -77,7 +77,13 @@ quit
 Connection closed by foreign host.
 ```
 
-## User Protocol DRAFT
+## Demos
+
+#### socket_demo.sci
+
+A short Scilab program which connects to the server and let user interact with the world
+
+## Protocol DRAFT
 
 #### Sever
 
@@ -114,7 +120,8 @@ quit
 
 #### Client
 
-move [1-8]
+move [1-8]  
+environs
 
 quit
 
