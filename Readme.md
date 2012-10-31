@@ -3,10 +3,26 @@ World Simulator (Erlang)
 
 ## Description
 
-A simple world which allow tcp socket based agents to explore it (compare with
-http://www.uffmm.org/EoIESS-TH/gclt/node14.html)
+A simple world which is based on the style of WOOD1 from Wilson (1994).
+Agents can connect with TCP sockets and explore it. Objects are encoded
+with the following ASCII symbols:
 
-This work iss till in progress and only a realy simple alpha !
+ * . - Free space
+ * * - An Agent
+ * O - A Object which can't be passed
+ * F - Food
+
+The socket connection use a plain text protocol, which is defined on the
+end of this Reamde file. The movement and position values are based on the
+following table:
+
+8 | 1 | 2  
+7 | * | 3  
+6 | 5 | 4
+
+Also compare with the corresponding script http://www.uffmm.org/EoIESS-TH/gclt/node14.html
+Disclaimer: The author of the script is different from the authors of the
+implementation.
 
 ## Authors
 
