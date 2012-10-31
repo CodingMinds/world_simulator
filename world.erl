@@ -148,13 +148,38 @@ handle_call(death, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
 %% Returns: {reply, ok, #state} | {reply, {food, Amount}, #state} |
 %%   {reply, {error, Reason}, #state}.
 %%----------------------------------------------------------------------
-handle_call({do, _Action}, {Pid, _Tag}, State=#state{map=_Map, agents=Agents}) ->
+handle_call({do, Action}, {Pid, _Tag}, State=#state{map=_Map, agents=Agents}) ->
   case lists:keyfind(Pid, 1, Agents) of
     false ->
       {reply, {error, client_unknown}, State};
     _ ->
-      % TODO: Handle actions
-      {reply, ok, State}
+      case Action of
+        {move, Direction} ->
+          case Direction of
+            1 ->
+              {reply, {food, 100}, State};
+            2 ->
+              {reply, {error, blocked}, State};
+            3 ->
+              {reply, {error, blocked}, State};
+            4 ->
+              {reply, {error, blocked}, State};
+            5 ->
+              {reply, ok, State};
+            6 ->
+              {reply, {error, staffed}, State};
+            7 ->
+              {reply, {error, staffed}, State};
+            8 ->
+              {reply, {error, staffed}, State};
+            _ ->
+              {reply, {error, bad_arg}, State}
+          end;
+        environs ->
+          {reply, {environs, ["F", "O", "O", "O", ".", "*", "*", "*"]}, State};
+        _ ->
+          {reply, {error, command_unknown}, State}
+      end
   end.
 
 %%----------------------------------------------------------------------

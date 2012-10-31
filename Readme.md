@@ -90,6 +90,7 @@ A short Scilab program which connects to the server and let user interact with t
 100 map  
 .......  
 101 world changed  
+102 environs [.|O|F|*]{8}
 
 200 welcome in this world  
 200 good bye  

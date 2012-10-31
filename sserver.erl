@@ -99,6 +99,9 @@ loop_user(Socket) ->
       case String of
         "quit" ->
           close_connection(Socket);
+        "environs" ->
+          call_world(Socket, environs),
+          loop_user(Socket);
         "move 1" ->
           call_world(Socket, {move, 1}),
           loop_user(Socket);
@@ -148,15 +151,18 @@ call_world(Socket, Command) ->
   case gen_server:call(world, {do, Command}) of
     ok ->
       gen_tcp:send(Socket, list_to_binary("201 success\r\n"));
-    {food, _Amount} ->
-      gen_tcp:send(Socket, list_to_binary("202 food 1\r\n"));
-      % TODO: Insert amount in response
+    {environs, Environs} ->
+      gen_tcp:send(Socket, list_to_binary(lists:append(["102 environs ", Environs, "\r\n"])));
+    {food, Amount} ->
+      gen_tcp:send(Socket, list_to_binary(lists:append(["202 food ", [Amount], "\r\n"])));
     {error, blocked} ->
       gen_tcp:send(Socket, list_to_binary("203 blocked\r\n"));
     {error, staffed} ->
       gen_tcp:send(Socket, list_to_binary("204 staffed\r\n"));
     {error, bad_arg} ->
       gen_tcp:send(Socket, list_to_binary("300 bad argument\r\n"));
+    {error, command_unknown} ->
+      gen_tcp:send(Socket, list_to_binary("400 unknown command\r\n"));
     {error, client_unknown} ->
       gen_tcp:send(Socket, list_to_binary("403 access denied\r\n"));
     {error, death} ->
