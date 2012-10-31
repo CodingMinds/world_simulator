@@ -25,11 +25,19 @@ This work iss till in progress and only a realy simple alpha !
 
 ## Next steps
 
+#### Server
+
  * Implement {do, Action}
- * Test navigation via telnet
+ * Add grid size to welcome greeting
  * Pimp sserver to handle admin port, too
  * Define first admin protocol draft and implement it
  * Prepare some worlds and make them loadable via admin interface
+
+#### Client demos
+
+  * Handle grid size in welcome greeting
+  * Handle environs reply
+  * Handle food and other protocol stuff
 
 ## Structure
 
