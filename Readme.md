@@ -66,26 +66,26 @@ Connection closed by foreign host.
 
 #### Sever
 
-100 map
-.......
-101 world changed
+100 map  
+.......  
+101 world changed  
 
-200 welcome in this world
-200 good bye
-201 success
-202 food N
-203 blocked
-204 staffed
+200 welcome in this world  
+200 good bye  
+201 success  
+202 food N  
+203 blocked  
+204 staffed  
 205 failed
 
-300 bad argument
+300 bad argument  
 301 death
 
-400 unknown command
-403 access denied
+400 unknown command  
+403 access denied  
 404 not found
 
-500 sever made a boo boo
+500 sever made a boo boo  
 501 world destroyed
 
 #### Admin
