@@ -8,9 +8,20 @@ http://www.uffmm.org/EoIESS-TH/gclt/node14.html)
 
 This work iss till in progress and only a realy simple alpha !
 
+## Authors
+
+ * Michael Bittorf (Coding Minds)
+ * André Feudenreich
+
 ## Dependencies
 
-* Min. Erlang R14B03
+#### Server
+
+ * Min. Erlang R14B03
+
+#### Scila demos
+
+ * Min. Scilab 5.4.0 with SOCKET library (2.0.1-1)
 
 ## Next steps
 
@@ -32,7 +43,9 @@ simulated world world.erl
 #### dummy.erl
 Only a some simple shortcuts for development. This part will be removed later
 
-## Usage
+## Example Usage
+
+#### Compiling
 
 Before the first run (or after sourcecode modifications) you need to compile
 the .erl files. This can be done by hand
@@ -43,6 +56,8 @@ or with the include makefile
 ```sh
 $ make
 ```
+
+#### Running
 
 To start the simple demo of the current state use
 ```erlang
