@@ -111,9 +111,9 @@ A short Scilab program which connects to the server and let user interact with t
 
 #### Admin
 
-status
-load filename
-kill all
+status  
+load filename  
+kill all  
 shutdown
 
 quit
