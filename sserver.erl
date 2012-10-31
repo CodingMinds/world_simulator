@@ -159,7 +159,7 @@ call_world(Socket, Command) ->
     {environs, Environs} ->
       gen_tcp:send(Socket, list_to_binary(lists:append(["102 environs ", Environs, "\r\n"])));
     {food, Amount} ->
-      gen_tcp:send(Socket, list_to_binary(lists:append(["202 food ", [Amount], "\r\n"])));
+      gen_tcp:send(Socket, list_to_binary(lists:append(["202 food ", integer_to_list(Amount), "\r\n"])));
     {error, blocked} ->
       gen_tcp:send(Socket, list_to_binary("203 blocked\r\n"));
     {error, staffed} ->
