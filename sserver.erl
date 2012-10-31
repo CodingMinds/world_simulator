@@ -46,14 +46,19 @@ accept_user(LSocket) ->
 
 %%----------------------------------------------------------------------
 %% Function: handle_connection/1
-%% Purpose: Handle incloming connection and create mapping in world
+%% Purpose: Handle incloming connection and create mapping in world.
+%%   Also tell the client how big is our world.
 %% Args: Active socket Socket
 %% Returns: ok
 %%----------------------------------------------------------------------
 handle_connection(Socket) ->
   case gen_server:call(world, birth) of
     ok ->
-      gen_tcp:send(Socket, list_to_binary("200 welcome in this world\r\n")),
+      State = gen_server:call(world, state),
+      Map = lists:map(fun({Coordinates, _}) -> Coordinates end, State#state.map),
+      {X, Y} = lists:nth(1, lists:sort(fun({Xa, Ya}, {Xb, Yb}) -> (Xb < Xa) and (Yb < Ya) end, Map)),
+      
+      gen_tcp:send(Socket, list_to_binary(lists:append(["200 welcome in this ", integer_to_list(X), "x", integer_to_list(Y), " world\r\n"]))),
       loop_user(Socket);
     map_full ->
       gen_tcp:send(Socket, list_to_binary("403 access denied\r\n")),

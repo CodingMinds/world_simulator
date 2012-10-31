@@ -44,7 +44,6 @@ implementation.
 #### Server
 
  * Implement {do, Action}
- * Add grid size to welcome greeting
  * Pimp sserver to handle admin port, too
  * Define first admin protocol draft and implement it
  * Prepare some worlds and make them loadable via admin interface
@@ -93,7 +92,7 @@ telnet localhost 4567
 Trying 127.0.0.1...
 Connected to localhost.
 Escape character is '^]'.
-200 welcome in this world
+200 welcome in this 2x2 world
 ehlo world
 400 unknown command
 quit
@@ -116,7 +115,7 @@ A short Scilab program which connects to the server and let user interact with t
 101 world changed  
 102 environs [.|O|F|*]{8}
 
-200 welcome in this world  
+200 welcome in this [1-9]+x[1-9]+ world  
 200 good bye  
 201 success  
 202 food N  
