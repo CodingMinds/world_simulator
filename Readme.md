@@ -51,7 +51,7 @@ implementation.
 #### Client demos
 
   * Handle grid size in welcome greeting
-  * Handle environs reply
+  * Handle environ reply
   * Handle food and other protocol stuff
 
 ## Structure
@@ -113,7 +113,7 @@ A short Scilab program which connects to the server and let user interact with t
 100 map  
 .......  
 101 world changed  
-102 environs [.|O|F|*]{8}
+102 environ [.|O|F|*]{8}
 
 200 welcome in this [1-9]+x[1-9]+ world  
 200 good bye  
@@ -145,7 +145,7 @@ quit
 #### Client
 
 move [1-8]  
-environs
+environ
 
 quit
 

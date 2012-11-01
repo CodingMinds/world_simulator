@@ -92,9 +92,9 @@ handle_call(state, _From, State) ->
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
-%% Purpose: Add the agent behind pid From to the map.
+%% Purpose: Add the agent behind pid From to the map
 %% Args: -
-%% Returns: {reply, ok, #state} | {reply, map_full, #state}.
+%% Returns: {reply, {ok, MapSize}, #state} | {reply, map_full, #state}.
 %%----------------------------------------------------------------------
 handle_call(birth, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
   Field = free_field(Map),
@@ -106,7 +106,7 @@ handle_call(birth, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
       NewMap = lists:keyreplace(Coordinates, 1, Map, {Coordinates, Properties#field{staffed=true}}),
       
       NewState = State#state{map = NewMap, agents = Agents ++ [ {Pid, Coordinates} ]},
-      
+            
       {reply, ok, NewState}
   end;
 
@@ -143,40 +143,70 @@ handle_call(death, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
-%% Purpose: 
+%% Purpose: Handle incoming do requests. Check if they are valid,
+%%   modifie the world and return the result to the client.
 %% Args: -
 %% Returns: {reply, ok, #state} | {reply, {food, Amount}, #state} |
 %%   {reply, {error, Reason}, #state}.
 %%----------------------------------------------------------------------
-handle_call({do, Action}, {Pid, _Tag}, State=#state{map=_Map, agents=Agents}) ->
+handle_call({do, Action}, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
+  CheckAndApply = fun(MapCell) ->
+    case MapCell of
+      [] ->
+        {reply, {error, blocked}, State};
+      _ ->
+        {Coordinates, Field} = lists:nth(1, MapCell),
+        if
+          Field#field.blocked == true ->
+            {reply, {error, blocked}, State};
+          Field#field.staffed == true ->
+            {reply, {error, blocked}, State};
+          Field#field.food /= 0 ->
+            NewAgents = lists:keyreplace(Pid, 1, Agents, {Pid, Coordinates}),
+            {reply, {food, Field#field.food}, State#state{agents=NewAgents}};
+          true ->
+            NewAgents = lists:keyreplace(Pid, 1, Agents, {Pid, Coordinates}),
+            {reply, ok, State#state{agents=NewAgents}}
+        end
+    end
+  end,
+    
   case lists:keyfind(Pid, 1, Agents) of
     false ->
       {reply, {error, client_unknown}, State};
-    _ ->
+    {_Pid, {X, Y}} ->
       case Action of
         {move, Direction} ->
           case Direction of
             1 ->
-              {reply, {food, 100}, State};
+              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X==Xm) and (Y-1==Ym) end, Map),
+              CheckAndApply(MapCell);
             2 ->
-              {reply, {error, blocked}, State};
+              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X+1==Xm) and (Y-1==Ym) end, Map),
+              CheckAndApply(MapCell);
             3 ->
-              {reply, {error, blocked}, State};
+              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X+1==Xm) and (Y==Ym) end, Map),
+              CheckAndApply(MapCell);
             4 ->
-              {reply, {error, blocked}, State};
+              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X+1==Xm) and (Y+1==Ym) end, Map),
+              CheckAndApply(MapCell);
             5 ->
-              {reply, ok, State};
+              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X==Xm) and (Y+1==Ym) end, Map),
+              CheckAndApply(MapCell);
             6 ->
-              {reply, {error, staffed}, State};
+              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X-1==Xm) and (Y+1==Ym) end, Map),
+              CheckAndApply(MapCell);
             7 ->
-              {reply, {error, staffed}, State};
+              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X-1==Xm) and (Y==Ym) end, Map),
+              CheckAndApply(MapCell);
             8 ->
-              {reply, {error, staffed}, State};
+              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X-1==Xm) and (Y-1==Ym) end, Map),
+              CheckAndApply(MapCell);
             _ ->
               {reply, {error, bad_arg}, State}
           end;
-        environs ->
-          {reply, {environs, ["F", "O", "O", "O", ".", "*", "*", "*"]}, State};
+        environ ->
+          {reply, {environ, ["F", "O", "O", "O", ".", "*", "*", "*"]}, State};
         _ ->
           {reply, {error, command_unknown}, State}
       end
@@ -215,3 +245,13 @@ free_field(Map) ->
       [ FreeField | _ ] = FreeFields,
       FreeField
   end.
+
+%%----------------------------------------------------------------------
+%% Function: check_and_apply_new_cell/3
+%% Purpose: Check if the applied cell is available for the client and
+%%   set the new position of the client if necessary
+%% Args: MapCell as target location, State as actual state of the
+%%   world and Pid as client identifier
+%% Returns: {reply, ok, State} | {reply, {food, N}, State} | {reply,
+%%   {Error, Reason}, State}
+%%----------------------------------------------------------------------

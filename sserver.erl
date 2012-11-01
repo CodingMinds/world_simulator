@@ -104,8 +104,8 @@ loop_user(Socket) ->
       case String of
         "quit" ->
           close_connection(Socket);
-        "environs" ->
-          call_world(Socket, environs),
+        "environ" ->
+          call_world(Socket, environ),
           loop_user(Socket);
         "move 1" ->
           call_world(Socket, {move, 1}),
@@ -156,8 +156,8 @@ call_world(Socket, Command) ->
   case gen_server:call(world, {do, Command}) of
     ok ->
       gen_tcp:send(Socket, list_to_binary("201 success\r\n"));
-    {environs, Environs} ->
-      gen_tcp:send(Socket, list_to_binary(lists:append(["102 environs ", Environs, "\r\n"])));
+    {environ, Environ} ->
+      gen_tcp:send(Socket, list_to_binary(lists:append(["102 environ ", Environ, "\r\n"])));
     {food, Amount} ->
       gen_tcp:send(Socket, list_to_binary(lists:append(["202 food ", integer_to_list(Amount), "\r\n"])));
     {error, blocked} ->
@@ -174,7 +174,6 @@ call_world(Socket, Command) ->
       gen_tcp:send(Socket, list_to_binary("301 death\r\n"));
     {error, _Reason} ->
       gen_tcp:send(Socket, list_to_binary("500 server made a boo boo\r\n"))
-      % TODO: specifie correct response in protocol
   end.
 
 
