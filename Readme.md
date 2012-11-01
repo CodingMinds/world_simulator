@@ -20,7 +20,7 @@ following table:
 7 | * | 3  
 6 | 5 | 4
 
-Also compare with the corresponding script http://www.uffmm.org/EoIESS-TH/gclt/node14.html
+Also compare with the corresponding script http://www.uffmm.org/EoIESS-TH/gclt/node14.html  
 Disclaimer: The author of the script is different from the authors of the
 implementation.
 
@@ -35,7 +35,7 @@ implementation.
 
  * Min. Erlang R14B03
 
-#### Scila demos
+#### Scilab demos
 
  * Min. Scilab 5.4.0 with SOCKET library (2.0.1-1)
 
