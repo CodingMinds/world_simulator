@@ -181,6 +181,26 @@ handle_call({do, Action}, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
     end
   end,
   
+  %%--------------------------------------------------------------------
+  %% Anonymous function: fun/1
+  %% Purpose: Return character which represents the state of the given
+  %%   sector. Based on Wilson's WOOD1
+  %% Args: Sector.
+  %% Returns: . | O  | F | *
+  %%--------------------------------------------------------------------
+  GetASCIIRepresentation = fun({_, Sector}) ->
+    if
+      Sector#sector.blocked == true ->
+        "O";
+      Sector#sector.staffed == true ->
+        "*";
+      Sector#sector.food /= 0 ->
+        "F";
+      true ->
+        "."
+    end
+  end,
+  
   case lists:keyfind(Pid, 1, Agents) of
     false ->
       {reply, {error, client_unknown}, State};
@@ -209,7 +229,18 @@ handle_call({do, Action}, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
               {reply, {error, bad_arg}, State}
           end;
         environ ->
-          {reply, {environ, ["F", "O", "O", "O", ".", "*", "*", "*"]}, State};
+          Environ = [
+            GetASCIIRepresentation(get_sector(X,   Y-1, Map)),
+            GetASCIIRepresentation(get_sector(X+1, Y-1, Map)),
+            GetASCIIRepresentation(get_sector(X+1, Y,   Map)),
+            GetASCIIRepresentation(get_sector(X+1, Y+1, Map)),
+            GetASCIIRepresentation(get_sector(X,   Y+1, Map)),
+            GetASCIIRepresentation(get_sector(X-1, Y+1, Map)),
+            GetASCIIRepresentation(get_sector(X-1, Y,   Map)),
+            GetASCIIRepresentation(get_sector(X-1, Y-1, Map))
+          ],
+          
+          {reply, {environ, Environ}, State};
         _ ->
           {reply, {error, command_unknown}, State}
       end
