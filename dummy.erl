@@ -26,15 +26,15 @@
 %%----------------------------------------------------------------------
 world_start() ->
   Map = [
-    {{0,0}, #field{food=1, blocked=false}},
-    {{0,1}, #field{food=0, blocked=true}},
-    {{0,2}, #field{food=0, blocked=false}},
-    {{1,0}, #field{food=1, blocked=false}},
-    {{1,1}, #field{food=0, blocked=true}},
-    {{1,2}, #field{food=0, blocked=false}},
-    {{2,0}, #field{food=1, blocked=false}},
-    {{2,1}, #field{food=0, blocked=true}},
-    {{2,2}, #field{food=0, blocked=false}}
+    {{0,0}, #sector{food=1, blocked=false}},
+    {{0,1}, #sector{food=0, blocked=true}},
+    {{0,2}, #sector{food=0, blocked=false}},
+    {{1,0}, #sector{food=1, blocked=false}},
+    {{1,1}, #sector{food=0, blocked=true}},
+    {{1,2}, #sector{food=0, blocked=false}},
+    {{2,0}, #sector{food=1, blocked=false}},
+    {{2,1}, #sector{food=0, blocked=true}},
+    {{2,2}, #sector{food=0, blocked=false}}
   ],
   
   world:start(Map).

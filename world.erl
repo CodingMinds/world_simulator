@@ -97,13 +97,13 @@ handle_call(state, _From, State) ->
 %% Returns: {reply, {ok, MapSize}, #state} | {reply, map_full, #state}.
 %%----------------------------------------------------------------------
 handle_call(birth, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
-  Field = free_field(Map),
-  case Field of
+  Sector = free_sector(Map),
+  case Sector of
     false ->
       {reply, map_full, State};
     {Coordinates, Properties} ->
       
-      NewMap = lists:keyreplace(Coordinates, 1, Map, {Coordinates, Properties#field{staffed=true}}),
+      NewMap = lists:keyreplace(Coordinates, 1, Map, {Coordinates, Properties#sector{staffed=true}}),
       
       NewState = State#state{map = NewMap, agents = Agents ++ [ {Pid, Coordinates} ]},
             
@@ -117,7 +117,7 @@ handle_call(birth, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
 %% Returns: {reply, ok, #state}.
 %%----------------------------------------------------------------------
 handle_call(death, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
-  % Free cell on map
+  % Free sector on map
   Agent = lists:keyfind(Pid, 1, Agents),
   NewMap = case Agent of
     false ->
@@ -128,9 +128,9 @@ handle_call(death, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
       case Result of
         false ->
           Map;
-        {_, Field} ->
-          NewField = {Coordinates, Field#field{staffed=false}},
-          lists:keyreplace(Coordinates, 1, Map, NewField)
+        {_, Sector} ->
+          NewSector = {Coordinates, Sector#sector{staffed=false}},
+          lists:keyreplace(Coordinates, 1, Map, NewSector)
       end
   end,
   
@@ -150,58 +150,61 @@ handle_call(death, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
 %%   {reply, {error, Reason}, #state}.
 %%----------------------------------------------------------------------
 handle_call({do, Action}, {Pid, _Tag}, State=#state{map=Map, agents=Agents}) ->
-  CheckAndApply = fun(MapCell) ->
-    case MapCell of
-      [] ->
+  %%--------------------------------------------------------------------
+  %% Anonymous function: fun/2
+  %% Purpose: Check if the applied sector is available for the client
+  %%   and set the new position if possible
+  %% Args: Actual and target sections.
+  %% Returns: {reply, ok, State} | {reply, {food, N}, State} | {reply,
+  %%   {Error, Reason}, State}
+  %%--------------------------------------------------------------------
+  CheckAndApply = fun({CoordinatesNow, SectorNow}, {CoordinatesNew, SectorNew}) ->
+    if
+      SectorNew#sector.blocked == true ->
         {reply, {error, blocked}, State};
-      _ ->
-        {Coordinates, Field} = lists:nth(1, MapCell),
-        if
-          Field#field.blocked == true ->
-            {reply, {error, blocked}, State};
-          Field#field.staffed == true ->
-            {reply, {error, blocked}, State};
-          Field#field.food /= 0 ->
-            NewAgents = lists:keyreplace(Pid, 1, Agents, {Pid, Coordinates}),
-            {reply, {food, Field#field.food}, State#state{agents=NewAgents}};
-          true ->
-            NewAgents = lists:keyreplace(Pid, 1, Agents, {Pid, Coordinates}),
-            {reply, ok, State#state{agents=NewAgents}}
-        end
+      SectorNew#sector.staffed == true ->
+        {reply, {error, staffed}, State};
+      SectorNew#sector.food /= 0 ->
+        NewAgents = lists:keyreplace(Pid, 1, Agents, {Pid, CoordinatesNew}),
+        NewMap = lists:keyreplace(CoordinatesNow, 1, Map, {CoordinatesNow, SectorNow#sector{staffed=false}}),
+        NewMap2 = lists:keyreplace(CoordinatesNew, 1, NewMap, {CoordinatesNew, SectorNew#sector{staffed=true}}),
+        NewState = State#state{map=NewMap2, agents=NewAgents},
+        
+        {reply, {food, SectorNew#sector.food}, NewState};
+      true ->
+        NewAgents = lists:keyreplace(Pid, 1, Agents, {Pid, CoordinatesNew}),
+        NewMap = lists:keyreplace(CoordinatesNow, 1, Map, {CoordinatesNow, SectorNow#sector{staffed=false}}),
+        NewMap2 = lists:keyreplace(CoordinatesNew, 1, NewMap, {CoordinatesNew, SectorNew#sector{staffed=true}}),
+        NewState = State#state{map=NewMap2, agents=NewAgents},
+        
+        {reply, ok, NewState}
     end
   end,
-    
+  
   case lists:keyfind(Pid, 1, Agents) of
     false ->
       {reply, {error, client_unknown}, State};
     {_Pid, {X, Y}} ->
       case Action of
         {move, Direction} ->
+          CurrentSector = get_sector(X, Y, Map),
           case Direction of
             1 ->
-              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X==Xm) and (Y-1==Ym) end, Map),
-              CheckAndApply(MapCell);
+              CheckAndApply(CurrentSector, get_sector(X, Y-1, Map));
             2 ->
-              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X+1==Xm) and (Y-1==Ym) end, Map),
-              CheckAndApply(MapCell);
+              CheckAndApply(CurrentSector, get_sector(X+1, Y-1, Map));
             3 ->
-              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X+1==Xm) and (Y==Ym) end, Map),
-              CheckAndApply(MapCell);
+              CheckAndApply(CurrentSector, get_sector(X+1, Y, Map));
             4 ->
-              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X+1==Xm) and (Y+1==Ym) end, Map),
-              CheckAndApply(MapCell);
+              CheckAndApply(CurrentSector, get_sector(X+1, Y+1, Map));
             5 ->
-              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X==Xm) and (Y+1==Ym) end, Map),
-              CheckAndApply(MapCell);
+              CheckAndApply(CurrentSector, get_sector(X, Y+1, Map));
             6 ->
-              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X-1==Xm) and (Y+1==Ym) end, Map),
-              CheckAndApply(MapCell);
+              CheckAndApply(CurrentSector, get_sector(X-1, Y+1, Map));
             7 ->
-              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X-1==Xm) and (Y==Ym) end, Map),
-              CheckAndApply(MapCell);
+              CheckAndApply(CurrentSector, get_sector(X-1, Y, Map));
             8 ->
-              MapCell = lists:filter(fun({{Xm, Ym}, _}) -> (X-1==Xm) and (Y-1==Ym) end, Map),
-              CheckAndApply(MapCell);
+              CheckAndApply(CurrentSector, get_sector(X-1, Y-1, Map));
             _ ->
               {reply, {error, bad_arg}, State}
           end;
@@ -231,27 +234,32 @@ handle_info(_Message, State) -> {noreply, State}.
 code_change(_OldVersion, State, _Extra) -> {ok, State}.
 
 %%----------------------------------------------------------------------
-%% Function: free_field/1
-%% Purpose: Return the coordinates of the next free field or false
+%% Function: free_sector/1
+%% Purpose: Return the coordinates of the next free sector or false
 %% Args: Map as map which should be used.
-%% Returns: {{X, Y}, #field} | false.
+%% Returns: {{X, Y}, #sector} | false.
 %%----------------------------------------------------------------------
-free_field(Map) ->
-  FreeFields = lists:filter(fun({_, #field{staffed=Staffed}}) -> Staffed == false end, Map),
-  case FreeFields of
+free_sector(Map) ->
+  FreeSectors = lists:filter(fun({_, #sector{staffed=Staffed}}) -> Staffed == false end, Map),
+  case FreeSectors of
     [] ->
       false;
     _ ->
-      [ FreeField | _ ] = FreeFields,
-      FreeField
+      [ FreeSector | _ ] = FreeSectors,
+      FreeSector
   end.
 
 %%----------------------------------------------------------------------
-%% Function: check_and_apply_new_cell/3
-%% Purpose: Check if the applied cell is available for the client and
-%%   set the new position of the client if necessary
-%% Args: MapCell as target location, State as actual state of the
-%%   world and Pid as client identifier
-%% Returns: {reply, ok, State} | {reply, {food, N}, State} | {reply,
-%%   {Error, Reason}, State}
+%% Function: get_sector/3
+%% Purpose: Get the sector on position X and Y of map Map. Return a
+%%  blocked one if there is no sector on this position.
+%% Args: X and Y as coordinates on map Map.
+%% Returns: {{X, Y}, #sector}
 %%----------------------------------------------------------------------
+get_sector(X, Y, Map) ->
+  case lists:filter(fun({{Xm, Ym}, _}) -> (X==Xm) and (Y==Ym) end, Map) of
+    [] ->
+      {{X, Y}, #sector{blocked=true}};
+    SectorList ->
+      lists:nth(1, SectorList)
+  end.

@@ -7,11 +7,10 @@
 -record(state, {map, agents = []}).
 
 %%---------------------------------------------------------------------
-%% Data Type: field
+%% Data Type: sector
 %% where:
 %%   staffed: An atom (default is false).
 %%   food: A integer (default is 0).
 %%   blocked: An atom (default is false).
 %%----------------------------------------------------------------------
--record(field, {staffed = false, food = 0, blocked = false}).
-
+-record(sector, {staffed = false, food = 0, blocked = false}).
