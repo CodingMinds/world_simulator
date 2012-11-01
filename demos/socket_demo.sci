@@ -3,8 +3,8 @@
 function[]=main()
     //config
     logfile=mopen('path\log.txt','w');
-    url = serveraddress;
-    port = serverport;
+    url = 'localhost';
+    port = 4567;
     
     try   
         SOCKET_open(1,url,port)
