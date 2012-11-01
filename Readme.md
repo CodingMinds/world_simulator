@@ -35,9 +35,10 @@ implementation.
 
  * Min. Erlang R14B03
 
-#### Scilab demos
+#### Demos
 
- * Min. Scilab 5.4.0 with SOCKET library (2.0.1-1)
+ * Min. Scilab 5.4.0 with SOCKET library (2.0.1-1) OR
+ * Min. Python 2.7
 
 ## Next steps
 
@@ -104,7 +105,12 @@ Connection closed by foreign host.
 
 #### socket_demo.sci
 
-A short Scilab program which connects to the server and let user interact with the world
+A short Scilab program which connects to the server and let user interact with the world.
+
+#### random_agent.py
+
+A simple demo of a random acting agent which terminates if he found food.  
+The amount of attempts will be printed to stdout.
 
 ## Protocol DRAFT
 
