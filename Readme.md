@@ -86,7 +86,7 @@ To start the simple demo of the current state use
 ```erlang
 1> sserver:start(4567).
 ```
-
+and then open a connection from another terminal like
 ```sh
 telnet localhost 4567
 Trying 127.0.0.1...
