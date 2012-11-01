@@ -26,15 +26,31 @@
 %%----------------------------------------------------------------------
 world_start() ->
   Map = [
-    {{0,0}, #sector{food=1, blocked=false}},
-    {{0,1}, #sector{food=0, blocked=true}},
-    {{0,2}, #sector{food=0, blocked=false}},
-    {{1,0}, #sector{food=1, blocked=false}},
-    {{1,1}, #sector{food=0, blocked=true}},
-    {{1,2}, #sector{food=0, blocked=false}},
-    {{2,0}, #sector{food=1, blocked=false}},
-    {{2,1}, #sector{food=0, blocked=true}},
-    {{2,2}, #sector{food=0, blocked=false}}
+    {{1,1}, #sector{}},
+    {{1,2}, #sector{}},
+    {{1,3}, #sector{blocked=true}},
+    {{1,4}, #sector{}},
+    {{1,5}, #sector{staffed=true}},
+    {{2,1}, #sector{}},
+    {{2,2}, #sector{}},
+    {{2,3}, #sector{blocked=true}},
+    {{2,4}, #sector{}},
+    {{2,5}, #sector{}},
+    {{3,1}, #sector{}},
+    {{3,2}, #sector{}},
+    {{3,3}, #sector{}},
+    {{3,4}, #sector{}},
+    {{3,5}, #sector{}},
+    {{4,1}, #sector{}},
+    {{4,2}, #sector{}},
+    {{4,3}, #sector{blocked=true}},
+    {{4,4}, #sector{blocked=true}},
+    {{4,5}, #sector{}},
+    {{5,1}, #sector{}},
+    {{5,2}, #sector{}},
+    {{5,3}, #sector{blocked=true}},
+    {{5,4}, #sector{food=75}},
+    {{5,5}, #sector{}}
   ],
   
   world:start(Map).
