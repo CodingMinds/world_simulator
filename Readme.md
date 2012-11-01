@@ -43,7 +43,7 @@ implementation.
 
 #### Server
 
- * Implement {do, Action}
+ * Define how to handle consumed food and implement it
  * Pimp sserver to handle admin port, too
  * Define first admin protocol draft and implement it
  * Prepare some worlds and make them loadable via admin interface
