@@ -55,13 +55,13 @@ implementations.
   * Handle food and other protocol stuff
 
 ## Logical Structure
-
+<pre>
 world (application)
  '-> world_sup (supervisor)
       |-> world_env (gen_server)
       '-> world_sservsup (supervisor)
            '-> world_sserv (gen_server)
-
+</pre>
 #### world_sup.erl
 The global supervisor which initialize the whole application. First the
 simulated world and then the supervisor of the socket server.
@@ -95,7 +95,7 @@ To start the application start an erlang shell in the directory ebin and enter
 ```
 
 Then open a connection from another terminal and try to find the food
-```sh
+<pre>
 telnet localhost 4567
 Trying 127.0.0.1...
 Connected to localhost.
@@ -117,7 +117,7 @@ move 2
 quit
 200 good bye
 Connection closed by foreign host.
-```
+</pre>
 
 Hint: To change the listening port modifie the environment option 'port' in the file ebin/world.app
 
