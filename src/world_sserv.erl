@@ -165,8 +165,10 @@ handle_info({tcp, _Socket, _Msg}, State=#sstate{socket=Socket}) ->
 %% Args: Socket state as tuple and server state as State
 %% Returns: {stop normal, SState}.
 %%----------------------------------------------------------------------
-handle_info({tcp_closed, _Socket}, S) ->
-  {stop, normal, S};
+handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
+  gen_server:call(world_env, death),
+  io:format("Socket ~w closed~n", [Socket]),
+  {stop, normal, State};
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
@@ -174,8 +176,10 @@ handle_info({tcp_closed, _Socket}, S) ->
 %% Args: Socket state as tuple and server state as State
 %% Returns: {stop, normal, SState}.
 %%----------------------------------------------------------------------
-handle_info({tcp_error, _Socket, _}, S) ->
-  {stop, normal, S};
+handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
+  gen_server:call(world_env, death),
+  io:format("Socket ~w closed~n", [Socket]),
+  {stop, normal, State};
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
