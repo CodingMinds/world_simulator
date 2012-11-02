@@ -16,7 +16,7 @@ port = 4567
 try:
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 except socket.error, msg:
-	print "Failed to create socket. Error code: " + str(msg[0])
+	print >> sys.stderr, "Failed to create socket. Error code: " + str(msg[0])
 	+ " , Error message : " + msg[1]
 	sys.exit()
 
@@ -24,7 +24,7 @@ except socket.error, msg:
 try:
 	remote_ip = socket.gethostbyname( host )
 except socket.gaierror:
-	print 'Hostname could not be resolved. Exiting'
+	print >> sys.stderr, 'Hostname could not be resolved. Exiting'
 	sys.exit()
 
 # connect and receive greeting
@@ -43,8 +43,7 @@ try:
 #	print "Found food after " + str(counter) + " attempts."
 	print counter
 except socket.error, msg:
-	print "Failed to communicate with server. Error code: " + str(msg[0])
-	+ " , Error message : " + msg[1]
+	print >> sys.stderr, "Failed to communicate with server."
 	sys.exit()
 
 # close connection

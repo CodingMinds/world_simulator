@@ -1,10 +1,10 @@
 %%---------------------------------------------------------------------
-%% Data Type: state
+%% Data Type: world
 %% where:
 %%   map: A list of tuples {{x,y}, field} (default is undefined).
 %%   agents: A list of tuples {pid, {x,y}} (default is []).
 %%----------------------------------------------------------------------
--record(state, {map, agents = []}).
+-record(world, {map, agents = []}).
 
 %%---------------------------------------------------------------------
 %% Data Type: sector
@@ -14,3 +14,10 @@
 %%   blocked: An atom (default is false).
 %%----------------------------------------------------------------------
 -record(sector, {staffed = false, food = 0, blocked = false}).
+
+%%---------------------------------------------------------------------
+%% Data Type: sstate
+%% where:
+%%   socket: A socket (default is undefined).
+%%----------------------------------------------------------------------
+-record(sstate, {socket}).

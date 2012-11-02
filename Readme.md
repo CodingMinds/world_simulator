@@ -22,7 +22,7 @@ following table:
 
 Also compare with the corresponding script http://www.uffmm.org/EoIESS-TH/gclt/node14.html  
 Disclaimer: The author of the script is different from the authors of the
-implementation.
+implementations.
 
 ## Authors
 
@@ -52,20 +52,26 @@ implementation.
 #### Client demos
 
   * Handle grid size in welcome greeting
-  * Handle environ reply
   * Handle food and other protocol stuff
 
-## Structure
+## Logical Structure
 
-#### world.erl
-The gen_server which represents the world
+world (application)
+ '-> world_sup (supervisor)
+      |-> world_env (gen_server)
+      '-> world_sservsup (supervisor)
+           '-> world_sserv (gen_server)
 
-#### sserver.erl
+#### world_sup.erl
+The global supervisor which initialize the whole application. First the
+simulated world and then the supervisor of the socket server.
+
+#### world_env.erl
+The gen_server which represents the virtual world and holds all the logic.
+
+#### world_sservsup.erl and world_sserv.erl
 The socket server which handle incoming connections and forward them to the
-simulated world world.erl
-
-#### dummy.erl
-Only a some simple shortcuts for development. This part will be removed later
+simulated world world_env.erl
 
 ## Example Usage
 
@@ -74,7 +80,7 @@ Only a some simple shortcuts for development. This part will be removed later
 Before the first run (or after sourcecode modifications) you need to compile
 the .erl files. This can be done by hand
 ```sh
-$ erlc world.erl dummy.erl sserver.erl
+$ erlc --make
 ```
 or with the include makefile
 ```sh
@@ -83,23 +89,37 @@ $ make
 
 #### Running
 
-To start the simple demo of the current state use
+To start the application start an erlang shell in the directory ebin and enter
 ```erlang
-1> sserver:start(4567).
+1> application:start(world).
 ```
-and then open a connection from another terminal like
+
+Then open a connection from another terminal and try to find the food
 ```sh
 telnet localhost 4567
 Trying 127.0.0.1...
 Connected to localhost.
 Escape character is '^]'.
-200 welcome in this 2x2 world
-ehlo world
-400 unknown command
+200 welcome in this 5x5 world
+move 1
+203 blocked
+move 5
+201 success
+environ
+102 environ ...OOOOO
+[...]
+move 3
+201 success
+environ
+102 environ OF.OOO..
+move 2
+202 food 75
 quit
 200 good bye
 Connection closed by foreign host.
 ```
+
+Hint: To change the listening port modifie the environment option 'port' in the file ebin/world.app
 
 ## Demos
 
@@ -154,6 +174,11 @@ move [1-8]
 environ
 
 quit
+
+## Used Sources
+
+ * Erlang documentation
+ * http://learnyousomeerlang.com/ for supervisor based socket server
 
 ## Licence
 [GNU General Public License v3](http://www.gnu.org/licenses/gpl.html)
