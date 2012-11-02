@@ -22,7 +22,7 @@
 %%% handle_info({tcp, Socket, _Msg}, State) ->
 %%%   Interface for the behaviour gen_server.
 %%%   Handle all unknown tcp messages.
-%%% handle_info({tcp_closed, _Socket, _}, S) ->
+%%% handle_info({tcp_closed, _Socket}, S) ->
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp_closed information. Terminate.
 %%% handle_info({tcp_error, _Socket, _}, S) ->
@@ -165,7 +165,7 @@ handle_info({tcp, _Socket, _Msg}, State=#sstate{socket=Socket}) ->
 %% Args: Socket state as tuple and server state as State
 %% Returns: {stop normal, SState}.
 %%----------------------------------------------------------------------
-handle_info({tcp_closed, _Socket, _}, S) ->
+handle_info({tcp_closed, _Socket}, S) ->
   {stop, normal, S};
 
 %%----------------------------------------------------------------------
