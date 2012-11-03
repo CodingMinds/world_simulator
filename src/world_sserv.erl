@@ -174,7 +174,6 @@ handle_info({tcp, _Socket, "move " ++ Message},
 handle_info({tcp, _Socket, "help quit" ++ _},
   State=#sstate{socket=Socket}) ->
   send(Socket, "103 quit leaves the world and closes the connection."),
-  io:format("Socket ~w received help quit~n", [Socket]),
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -199,7 +198,6 @@ handle_info({tcp, _Socket, "help environ" ++ _},
             ++ "103    7 | # | 3~n"
             ++ "103    6 | 5 | 4"
             ),
-  io:format("Socket ~w received help environ~n", [Socket]),
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -219,7 +217,6 @@ handle_info({tcp, _Socket, "help move" ++ _},
             ++ "103    7 | # | 3~n"
             ++ "103    6 | 5 | 4"
             ),
-  io:format("Socket ~w received help move~n", [Socket]),
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -236,7 +233,6 @@ handle_info({tcp, _Socket, "help" ++ _},
             ++ "103    environ         Show the nearest environ~n"
             ++ "103    quit            Leave this world"
             ),
-  io:format("Socket ~w received help~n", [Socket]),
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -247,7 +243,6 @@ handle_info({tcp, _Socket, "help" ++ _},
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "\r\n"}, State=#sstate{socket=Socket}) ->
   inet:setopts(Socket, [{active, once}]),
-  io:format("Socket ~w ignored empty line~n", [Socket]),
   {noreply, State};
 
 %%----------------------------------------------------------------------
