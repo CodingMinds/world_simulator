@@ -3,7 +3,8 @@ World Simulator (Erlang)
 
 ## Description
 
-A simple world which is based on the style of WOOD1 from Wilson (1994).
+A simple world which is based on the style of the WOOD1 environment described
+from Wilson in "ZCS: A Zeroth Level Classifier System" (1994).
 Agents can connect with TCP sockets and explore it. Objects are encoded
 with the following ASCII symbols:
 
@@ -119,7 +120,7 @@ quit
 Connection closed by foreign host.
 </pre>
 
-Hint: To change the listening port modifie the environment option 'port' in the file ebin/world.app
+Hint: To change the listening port modify the environment option 'port' in the file ebin/world.app.
 
 ## Demos
 
@@ -129,17 +130,17 @@ A short Scilab program which connects to the server and let user interact with t
 
 #### random_agent.py
 
-A simple demo of a random acting agent which terminates if he found food.  
+A simple demo of a random acting agent which terminates if the food is found.  
 The amount of attempts will be printed to stdout.
 
 ## Protocol DRAFT
 
 #### Sever
 
-100 map  
-.......  
+100 ASCII map representation
 101 world changed  
 102 environ [.|O|F|*]{8}
+103 free text help replys
 
 200 welcome in this [1-9]+x[1-9]+ world  
 200 good bye  
@@ -172,6 +173,7 @@ quit
 
 move [1-8]  
 environ
+help [COMMAND]
 
 quit
 
@@ -179,6 +181,7 @@ quit
 
  * Erlang documentation
  * http://learnyousomeerlang.com/ for supervisor based socket server
+ * http://www.uffmm.org/ for theoretical stuff and specifications
 
 ## Licence
 [GNU General Public License v3](http://www.gnu.org/licenses/gpl.html)

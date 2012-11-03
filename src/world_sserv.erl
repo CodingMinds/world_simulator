@@ -19,6 +19,18 @@
 %%% handle_info({tcp, Socket, "move " ++ Message}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'move X' messages.
+%%% handle_info({tcp, Socket, "help quit" ++ _}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'help quit' messages.
+%%% handle_info({tcp, Socket, "help environ" ++ _}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'help environ' messages.
+%%% handle_info({tcp, Socket, "help move" ++ _}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'help move' messages.
+%%% handle_info({tcp, Socket, "help" ++ _}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'help' messages.
 %%% handle_info({tcp, Socket, "\r\n"}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle empty tcp messages.
@@ -155,6 +167,80 @@ handle_info({tcp, _Socket, "move " ++ Message},
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
+%% Purpose: Handle tcp 'help quit' mesages.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "help quit" ++ _},
+  State=#sstate{socket=Socket}) ->
+  send(Socket, "103 quit leaves the world and closes the connection."),
+  io:format("Socket ~w received help quit~n", [Socket]),
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'help environ' mesages.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "help environ" ++ _},
+  State=#sstate{socket=Socket}) ->
+  send(Socket, "103 environ shows the nearest environ.~n"
+            ++ "103 Returns a 8 character long string with ASCII "
+            ++ "representations of the immediate neighbors.~n"
+            ++ "103 Possible characters are:~n"
+            ++ "103    .   Empty cell~n"
+            ++ "103    O   A blocking object~n"
+            ++ "103    F   Food~n"
+            ++ "103    *   Another agent~n"
+            ++ "103 The positions within the string corrspond with the "
+            ++ "mapping of Wilsons WOOD1 environment~n"
+            ++ "103    8 | 1 | 2~n"
+            ++ "103    7 | # | 3~n"
+            ++ "103    6 | 5 | 4"
+            ),
+  io:format("Socket ~w received help environ~n", [Socket]),
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'help move' mesages.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "help move" ++ _},
+  State=#sstate{socket=Socket}) ->
+  send(Socket, "103 move [1-8] moves the client to position N.~n"
+            ++ "103 N must be a value from 1 to 8 and describes the "
+            ++ "direction relative to the actual position of the "
+            ++ "client.~n"
+            ++ "103 The mapping is based on Wilsons WOOD1 environment~n"
+            ++ "103    8 | 1 | 2~n"
+            ++ "103    7 | # | 3~n"
+            ++ "103    6 | 5 | 4"
+            ),
+  io:format("Socket ~w received help move~n", [Socket]),
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'help' mesages.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "help" ++ _},
+  State=#sstate{socket=Socket}) ->
+  send(Socket, "103 The most commonly used commands are:~n"
+            ++ "103    help COMMAND    Print detailed help~n"
+            ++ "103    move [1-8]      Move the client to position N~n"
+            ++ "103    environ         Show the nearest environ~n"
+            ++ "103    quit            Leave this world"
+            ),
+  io:format("Socket ~w received help~n", [Socket]),
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
 %% Purpose: Handle empty tcp messages and ignore them
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, SState}.
@@ -245,7 +331,6 @@ send(Socket, Str, Args) ->
 %% Returns: ok | {error, Reason}.
 %%----------------------------------------------------------------------
 call_world(Socket, Command) ->
-  io:format("Socket ~w ~w~n", [Socket, Command]),
   case gen_server:call(world_env, {do, Command}) of
     ok ->
       send(Socket, "201 success");
