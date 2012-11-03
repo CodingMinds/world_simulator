@@ -19,6 +19,9 @@
 %%% handle_info({tcp, Socket, "move " ++ Message}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'move X' messages.
+%%% handle_info({tcp, Socket, "\r\n"}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle empty tcp messages.
 %%% handle_info({tcp, Socket, _Msg}, State) ->
 %%%   Interface for the behaviour gen_server.
 %%%   Handle all unknown tcp messages.
@@ -121,8 +124,8 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "quit" ++ _},
   State=#sstate{socket=Socket}) ->
-  io:format("Socket ~w received quit~n", [Socket]),
   close_connection(Socket),
+  io:format("Socket ~w received quit~n", [Socket]),
   {stop, normal, State};
 
 %%----------------------------------------------------------------------
@@ -134,6 +137,7 @@ handle_info({tcp, _Socket, "quit" ++ _},
 handle_info({tcp, _Socket, "environ" ++ _},
   State=#sstate{socket=Socket}) ->
   call_world(Socket, environ),
+  io:format("Socket ~w received environ~n", [Socket]),
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -151,12 +155,24 @@ handle_info({tcp, _Socket, "move " ++ Message},
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
+%% Purpose: Handle empty tcp messages and ignore them
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "\r\n"}, State=#sstate{socket=Socket}) ->
+  inet:setopts(Socket, [{active, once}]),
+  io:format("Socket ~w ignored empty line~n", [Socket]),
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
 %% Purpose: Handle unknown tcp messages
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
-handle_info({tcp, _Socket, _Msg}, State=#sstate{socket=Socket}) ->
+handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
   send(Socket, "400 unknown command"),
+  io:format("Socket ~w received unknown command: ~s~n", [Socket, Msg]),
   {noreply, State};
 
 %%----------------------------------------------------------------------
