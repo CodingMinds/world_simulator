@@ -137,9 +137,9 @@ The amount of attempts will be printed to stdout.
 
 #### Sever
 
-100 ASCII map representation
+100 ASCII map representation  
 101 world changed  
-102 environ [.|O|F|*]{8}
+102 environ [.|O|F|*]{8}  
 103 free text help replys
 
 200 welcome in this [1-9]+x[1-9]+ world  
@@ -172,7 +172,7 @@ quit
 #### Client
 
 move [1-8]  
-environ
+environ  
 help [COMMAND]
 
 quit
