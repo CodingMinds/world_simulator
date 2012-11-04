@@ -70,8 +70,12 @@ init([Map]) when is_list(Map) ->
 %%   world_records.hrl).
 %% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
-handle_call({load, Map}, _From, _World) ->
-  NewWorld = #world{map = Map},
+handle_call({load, Map}, _From, #world{agents=Agents}) ->
+  lists:foreach(fun({Pid, _Coordinates}) ->
+      gen_server:cast(Pid, world_destroyed)
+    end, Agents),
+  NewWorld = #world{map = Map, agents=[]},
+  
   {reply, ok, NewWorld};
 
 %%----------------------------------------------------------------------

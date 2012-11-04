@@ -1,7 +1,7 @@
 %%---------------------------------------------------------------------
 %% Data Type: world
 %% where:
-%%   map: A list of tuples {{x,y}, field} (default is undefined).
+%%   map: A list of tuples {{x,y}, sector} (default is undefined).
 %%   agents: A list of tuples {pid, {x,y}} (default is []).
 %%----------------------------------------------------------------------
 -record(world, {map, agents = []}).

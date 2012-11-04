@@ -10,6 +10,9 @@
 %%% handle_cast(accept, From, State)
 %%%   Interface for the behaviour gen_server.
 %%%   Informs the server to accept the incoming connection.
+%%% handle_cast(world_destroyed, From, State)
+%%%   Interface for the behaviour gen_server.
+%%%   The world was destroyed. Close the connection and Terminate.
 %%% handle_info({tcp, Socket, "quit" ++ _}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'quit' messages.
@@ -112,20 +115,37 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
                                 (Xb < Xa) and (Yb < Ya) end, Map)),
           
           send(Socket, "200 welcome in this ~Bx~B world", [X, Y]),
+          
           {noreply, State#sstate{socket=Socket}};
         map_full ->
           send(Socket, "403 access denied"),
           close_connection(Socket),
+          
           {stop, {error, map_full}, State};
         _ ->
           send(Socket, "500 server made a boo boo", []),
           close_connection(Socket),
+          
           {stop, {error, unknown}, State}
       end;
     {error, Reason} ->
       io:format("Socket connection error ~w~n", [Reason]),
+      
       {stop, {error, Reason}, State}
-  end.
+  end;
+
+%%----------------------------------------------------------------------
+%% Function: handle_cast/2
+%% Purpose: The world was destroyed. Close the connection and terminate.
+%% Args: -
+%% Returns: {noreply, SState} | {stop, normal, SState} |
+%%   {stop, {error, Reason}, SState}
+%%----------------------------------------------------------------------
+handle_cast(world_destroyed, SState = #sstate{socket=Socket}) ->
+  send(Socket, "501 world destroyed"),
+  close_connection(Socket),
+  
+  {stop, normal, SState}.
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
@@ -138,6 +158,7 @@ handle_info({tcp, _Socket, "quit" ++ _},
   State=#sstate{socket=Socket}) ->
   close_connection(Socket),
   io:format("Socket ~w received quit~n", [Socket]),
+  
   {stop, normal, State};
 
 %%----------------------------------------------------------------------
@@ -150,6 +171,7 @@ handle_info({tcp, _Socket, "environ" ++ _},
   State=#sstate{socket=Socket}) ->
   call_world(Socket, environ),
   io:format("Socket ~w received environ~n", [Socket]),
+  
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -163,6 +185,7 @@ handle_info({tcp, _Socket, "move " ++ Message},
   Direction = list_to_integer(hd(string:tokens(Message, "\r\n "))),
   call_world(Socket, {move, Direction}),
   io:format("Socket ~w received move ~B~n", [Socket, Direction]),
+  
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -174,6 +197,7 @@ handle_info({tcp, _Socket, "move " ++ Message},
 handle_info({tcp, _Socket, "help quit" ++ _},
   State=#sstate{socket=Socket}) ->
   send(Socket, "103 quit leaves the world and closes the connection."),
+  
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -198,6 +222,7 @@ handle_info({tcp, _Socket, "help environ" ++ _},
             ++ "103    7 | # | 3~n"
             ++ "103    6 | 5 | 4"
             ),
+  
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -217,6 +242,7 @@ handle_info({tcp, _Socket, "help move" ++ _},
             ++ "103    7 | # | 3~n"
             ++ "103    6 | 5 | 4"
             ),
+  
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -233,6 +259,7 @@ handle_info({tcp, _Socket, "help" ++ _},
             ++ "103    environ         Show the nearest environ~n"
             ++ "103    quit            Leave this world"
             ),
+  
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -243,6 +270,7 @@ handle_info({tcp, _Socket, "help" ++ _},
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "\r\n"}, State=#sstate{socket=Socket}) ->
   inet:setopts(Socket, [{active, once}]),
+  
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -254,6 +282,7 @@ handle_info({tcp, _Socket, "\r\n"}, State=#sstate{socket=Socket}) ->
 handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
   send(Socket, "400 unknown command"),
   io:format("Socket ~w received unknown command: ~s~n", [Socket, Msg]),
+  
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -265,6 +294,7 @@ handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
 handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
   gen_server:call(world_env, death),
   io:format("Socket ~w closed~n", [Socket]),
+  
   {stop, normal, State};
 
 %%----------------------------------------------------------------------
@@ -276,6 +306,7 @@ handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
 handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
   gen_server:call(world_env, death),
   io:format("Socket ~w closed~n", [Socket]),
+  
   {stop, normal, State};
 
 %%----------------------------------------------------------------------
@@ -286,6 +317,7 @@ handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info(E, S) ->
   io:format("unexpected: ~p~n", [E]),
+  
   {noreply, S}.
 
 %%----------------------------------------------------------------------
