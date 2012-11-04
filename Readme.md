@@ -86,20 +86,23 @@ Some helper functions which are used inmore than one module.
 
 ## Default behaviour
 
-The world is initialized with a small 5x5 example world which shows all possible objects.
+The world is initialized with a small 5x5 example world which shows all
+possible objects.
 
-To load your own world connect to the control port (see Example usage) and use the command
-'load'. Encode the map with the ASCII symbols described in the section Description; to mark
-the beginning of a new row use the character |. For example the default world (except the
-hard coded and not responding demo agent) could be encoded with the following string:
+To load your own world connect to the control port (see Example usage) and use
+the command 'load'. Encode the map with the ASCII symbols described in the
+section Description; to mark the beginning of a new row use the character |.
+For example the default world (except the hard coded and not responding demo
+agent) could be encoded with the following string:
 
 <pre>
 .....|.....|OO.|...OF|..X..|
 </pre>
 
-As you can see, the third row has only three elements. This should demonstrate, that the
-environment interprets each not explicit defined section as a blocking object. And each
-unknown character (e.g. the X) is interpreted as a free cell.
+As you can see, the third row has only three elements. This should
+demonstrate, that the environment interprets each not explicit defined section
+as a blocking object. And each unknown character (e.g. the X) is interpreted
+as a free cell.
 
 ## Example Usage
 
@@ -177,13 +180,19 @@ Connection closed by foreign host.
 
 #### socket_demo.sci
 
-A short Scilab program which connects to the server and let user interact with the world.
+A short Scilab program which connects to the server and let user interact
+with the world.
 
 #### random_agent.py
 
 A simple demo of a random acting agent which terminates if the food is found.  
 The amount of attempts will be printed to stdout.
 
+#### guest_ui.php
+
+A simple demo of a php UI to show interested users what's going on. Uses the
+ctrl port to get the whole environment.
+  
 ## Protocol DRAFT
 
 #### Sever
@@ -214,7 +223,7 @@ The amount of attempts will be printed to stdout.
 #### Admin
 
 map  
-load ASCII_REPRESENTATION
+load ASCII_REPRESENTATION  
 kill all (not yet implemented)  
 shutdown (not yet implemented)
 
