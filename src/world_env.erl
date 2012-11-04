@@ -16,9 +16,12 @@
 %%% handle_call({load, Map}, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Replace the actual running map with the new one (see records.hrl).
+%%% handle_call(map, From, World)
+%%%   Interface for the behaviour gen_server.
+%%%   Return the actual map as ASCII representation per row.
 %%% handle_call(state, From, World)
 %%%   Interface for the behaviour gen_server.
-%%%   Return the actual internal world of the map.
+%%%   Return the actual internal state of the environment.
 %%% handle_call(birth, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Add the agent behind pid From to the map.
@@ -81,9 +84,9 @@ handle_call({load, Map}, _From, #world{agents=Agents})
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
-%% Purpose: Show the actual map as ASCII representation.
+%% Purpose: Return the actual map as ASCII representation per row.
 %% Args: -
-%% Returns: {reply, {map, AsciiMap}, #world}.
+%% Returns: {reply, {map, [AsciiRow, ..]}, #world}.
 %%----------------------------------------------------------------------
 handle_call(map, _From, World=#world{map=Map}) ->
   %% Get max size of map
@@ -103,12 +106,7 @@ handle_call(map, _From, World=#world{map=Map}) ->
                            ColAcc ++ ascii_rep(get_sector(Xi, Yi, Map))
                          end,
                        [], lists:seq(1, X)),
-                 if
-                   Yi /= Y ->
-                     RowAcc ++ Col ++ "~n";
-                   true ->
-                     RowAcc ++ Col
-                 end
+                 RowAcc ++ [Col]
                end,
              [], lists:seq(1, Y)),
   

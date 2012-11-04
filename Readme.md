@@ -157,19 +157,17 @@ Connected to localhost.
 Escape character is '^]'.
 200 Speak, friend, and ente(r)
 map
-100 current map
-.....
-.....
-OO.OO
-...OF
-*....
+100 .....
+100 .....
+100 OO.OO
+100 ...OF
+100 *....
 load F...O|....|..........F
 201 success
 map
-100 current map
-F...OOOOOOO
-....OOOOOOO
-..........F
+100 F...OOOOOOO
+100 ....OOOOOOO
+100 ..........F
 quit
 200 good bye
 Connection closed by foreign host.

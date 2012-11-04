@@ -218,8 +218,8 @@ call_world(Socket, Command) ->
   case gen_server:call(world_env, Command) of
     ok ->
       world_helper:send(Socket, "201 success");
-    {map, AsciiMap} ->
-      world_helper:send(Socket, "100 current map"),
+    {map, AsciiRows} ->
+      AsciiMap = "100 " ++ string:join(AsciiRows, "~n100 "),
       world_helper:send(Socket, AsciiMap);
     {error, bad_arg} ->
       world_helper:send(Socket, "300 bad argument");
