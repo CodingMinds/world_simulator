@@ -58,10 +58,10 @@ implementations.
 world (application)
  '-> world_sup (supervisor)
       |-> world_env (gen_server)
-      |-> world_sservsup (supervisor)
-      |    '-> world_sserv (gen_server)
-      '-> world_ctl_sservsup (supervisor)
-           '-> world_ctl_sserv (gen_server)
+      |-> world_ctl_sservsup (supervisor)
+      |    '-> world_ctl_sserv (gen_server)
+      '-> world_sservsup (supervisor)
+           '-> world_sserv (gen_server)
 </pre>
 
 #### world_sup.erl
@@ -80,6 +80,9 @@ Listens on the port which is defined in world.app as 'port' (default 4567)
 The socket server which handle incoming control connections and forward them
 to the simulated world world_env.erl  
 Listens on the port which is defined in world.app as 'ctl_port' (default 4568)
+
+#### world_helper.erl
+Some helper functions which are used inmore than one module.
 
 ## Default behaviour
 
@@ -121,7 +124,7 @@ To start the application start an erlang shell in the directory ebin and enter
 
 Then open a connection from another terminal and try to find the food
 <pre>
-telnet localhost 4567
+$ telnet localhost 4567
 Trying 127.0.0.1...
 Connected to localhost.
 Escape character is '^]'.
@@ -148,7 +151,7 @@ Connection closed by foreign host.
 
 If the server is running open a telnet connection to the control port
 <pre>
-telnet localhost 4568
+$ telnet localhost 4568
 Trying 127.0.0.1...
 Connected to localhost.
 Escape character is '^]'.
@@ -213,7 +216,7 @@ The amount of attempts will be printed to stdout.
 #### Admin
 
 map  
-load ASCII_representation  
+load ASCII_REPRESENTATION
 kill all (not yet implemented)  
 shutdown (not yet implemented)
 
