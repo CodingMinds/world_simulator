@@ -1,8 +1,8 @@
 %%%---------------------------------------------------------------------
-%%% Description module world_sserv
+%%% Description module world_ctl_sserv
 %%%---------------------------------------------------------------------
-%%% SServ is a socket based server which provides the user interface for
-%%% the simulated world.
+%%% Ctl SServ is a socket based server which provides the interfaces to
+%%% control the simulated world.
 %%%---------------------------------------------------------------------
 %%% Exports
 %%% init([])
@@ -10,30 +10,15 @@
 %%% handle_cast(accept, From, State)
 %%%   Interface for the behaviour gen_server.
 %%%   Informs the server to accept the incoming connection.
-%%% handle_cast(world_destroyed, From, State)
-%%%   Interface for the behaviour gen_server.
-%%%   The world was destroyed. Close the connection and Terminate.
 %%% handle_info({tcp, Socket, "quit" ++ _}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'quit' messages.
-%%% handle_info({tcp, Socket, "environ" ++ _}
+%%% handle_info({tcp, Socket, "map" ++ _}
 %%%   Interface for the behaviour gen_server.
-%%%   Handle tcp 'environ' messages.
-%%% handle_info({tcp, Socket, "move " ++ Message}
+%%%   Handle tcp 'map' messages.
+%%% handle_info({tcp, Socket, "load " ++ MapString}
 %%%   Interface for the behaviour gen_server.
-%%%   Handle tcp 'move X' messages.
-%%% handle_info({tcp, Socket, "help quit" ++ _}
-%%%   Interface for the behaviour gen_server.
-%%%   Handle tcp 'help quit' messages.
-%%% handle_info({tcp, Socket, "help environ" ++ _}
-%%%   Interface for the behaviour gen_server.
-%%%   Handle tcp 'help environ' messages.
-%%% handle_info({tcp, Socket, "help move" ++ _}
-%%%   Interface for the behaviour gen_server.
-%%%   Handle tcp 'help move' messages.
-%%% handle_info({tcp, Socket, "help" ++ _}
-%%%   Interface for the behaviour gen_server.
-%%%   Handle tcp 'help' messages.
+%%%   Handle tcp 'load X' messages.
 %%% handle_info({tcp, Socket, "\r\n"}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle empty tcp messages.
@@ -51,7 +36,7 @@
 %%%   Ignore all unknown messages.
 %%%---------------------------------------------------------------------
 
--module(world_sserv).
+-module(world_ctl_sserv).
 -author('M. Bittorf <info@coding-minds.com>').
 
 -behaviour(gen_server).
@@ -102,167 +87,56 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
 	    %% request new acceptor from supervisor
       world_sservsup:start_socket(),
       
-      %% handle new connection and try to create mapping
-      io:format("Socket ~w connection established~n", [Socket]),
-      case gen_server:call(world_env, birth) of
-        ok ->
-          %% get map size
-          {state, World} = gen_server:call(world_env, state),
-          Map = lists:map(fun({Coordinates, _}) ->
-                          Coordinates end, World#world.map),
-          {X, Y} = lists:nth(1,
-                     lists:sort(fun({Xa, Ya}, {Xb, Yb}) ->
-                                (Xb < Xa) and (Yb < Ya) end, Map)),
-          
-          world_helper:send(Socket, "200 welcome in this ~Bx~B world",
-            [X, Y]),
-          
-          {noreply, State#sstate{socket=Socket}};
-        map_full ->
-          world_helper:send(Socket, "403 access denied"),
-          close_connection(Socket),
-          
-          {stop, {error, map_full}, State};
-        _ ->
-          world_helper:send(Socket, "500 server made a boo boo", []),
-          close_connection(Socket),
-          
-          {stop, {error, unknown}, State}
-      end;
+      %% handle new connection
+      io:format("Ctl: Socket ~w connection established~n", [Socket]),
+      world_helper:send(Socket, "200 Speak, friend, and ente(r)"),
+      
+      {noreply, State#sstate{socket=Socket}};
     {error, Reason} ->
-      io:format("Socket connection error ~w~n", [Reason]),
+      io:format("Ctl: Socket connection error ~w~n", [Reason]),
       
       {stop, {error, Reason}, State}
-  end;
-
-%%----------------------------------------------------------------------
-%% Function: handle_cast/2
-%% Purpose: The world was destroyed. Close the connection and terminate.
-%% Args: -
-%% Returns: {noreply, SState} | {stop, normal, SState} |
-%%   {stop, {error, Reason}, SState}
-%%----------------------------------------------------------------------
-handle_cast(world_destroyed, SState = #sstate{socket=Socket}) ->
-  world_helper:send(Socket, "501 world destroyed"),
-  close_connection(Socket),
-  
-  {stop, normal, SState}.
+  end.
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle tcp 'quit' message, cleanup the world and close
-%%   socket.
+%% Purpose: Handle tcp 'quit' message. Terminate.
 %% Args: Socket package as tuple and server state as State
 %% Returns: {stop, normal, SState}.
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "quit" ++ _},
   State=#sstate{socket=Socket}) ->
-  io:format("Socket ~w received quit~n", [Socket]),
+  io:format("Ctl: Socket ~w received quit~n", [Socket]),
   close_connection(Socket),
   
   {stop, normal, State};
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle tcp 'environ' message.
+%% Purpose: Handle tcp 'map' message.
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
-handle_info({tcp, _Socket, "environ" ++ _},
+handle_info({tcp, _Socket, "map" ++ _},
   State=#sstate{socket=Socket}) ->
-  call_world(Socket, environ),
-  io:format("Socket ~w received environ~n", [Socket]),
+  call_world(Socket, map),
+  io:format("Ctl: Socket ~w received map~n", [Socket]),
   
   {noreply, State};
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle tcp 'move X' mesages.
+%% Purpose: Handle tcp 'load MapString' mesages.
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
-handle_info({tcp, _Socket, "move " ++ Message},
+handle_info({tcp, _Socket, "load " ++ String},
   State=#sstate{socket=Socket}) ->
-  Direction = list_to_integer(hd(string:tokens(Message, "\r\n "))),
-  call_world(Socket, {move, Direction}),
-  io:format("Socket ~w received move ~B~n", [Socket, Direction]),
+  MapString = hd(string:tokens(String, "\r\n")),
+  Map = world_helper:convert_to_map(MapString),
   
-  {noreply, State};
-
-%%----------------------------------------------------------------------
-%% Function: handle_info/2
-%% Purpose: Handle tcp 'help quit' mesages.
-%% Args: Socket package as tuple and server state as State
-%% Returns: {noreply, SState}.
-%%----------------------------------------------------------------------
-handle_info({tcp, _Socket, "help quit" ++ _},
-  State=#sstate{socket=Socket}) ->
-  world_helper:send(Socket,
-    "103 quit leaves the world and closes the connection."),
-  
-  {noreply, State};
-
-%%----------------------------------------------------------------------
-%% Function: handle_info/2
-%% Purpose: Handle tcp 'help environ' mesages.
-%% Args: Socket package as tuple and server state as State
-%% Returns: {noreply, SState}.
-%%----------------------------------------------------------------------
-handle_info({tcp, _Socket, "help environ" ++ _},
-  State=#sstate{socket=Socket}) ->
-  world_helper:send(Socket,
-    "103 environ shows the nearest environ.~n" ++
-    "103 Returns a 8 character long string with ASCII " ++
-        "representations of the immediate neighbors.~n" ++
-    "103 Possible characters are:~n" ++
-    "103    .   Empty cell~n" ++
-    "103    O   A blocking object~n" ++
-    "103    F   Food~n" ++
-    "103    *   Another agent~n" ++
-    "103 The positions within the string corrspond with the mapping" ++
-        "of Wilsons WOOD1 environment~n" ++
-    "103    8 | 1 | 2~n" ++
-    "103    7 | # | 3~n" ++
-    "103    6 | 5 | 4"
-  ),
-  
-  {noreply, State};
-
-%%----------------------------------------------------------------------
-%% Function: handle_info/2
-%% Purpose: Handle tcp 'help move' mesages.
-%% Args: Socket package as tuple and server state as State
-%% Returns: {noreply, SState}.
-%%----------------------------------------------------------------------
-handle_info({tcp, _Socket, "help move" ++ _},
-  State=#sstate{socket=Socket}) ->
-  world_helper:send(Socket,
-    "103 move [1-8] moves the client to position N.~n" ++
-    "103 N must be a value from 1 to 8 and describes the direction " ++
-        "relative to the actual position of the client.~n" ++
-    "103 The mapping is based on Wilsons WOOD1 environment~n" ++
-    "103    8 | 1 | 2~n" ++
-    "103    7 | # | 3~n" ++
-    "103    6 | 5 | 4"
-  ),
-  
-  {noreply, State};
-
-%%----------------------------------------------------------------------
-%% Function: handle_info/2
-%% Purpose: Handle tcp 'help' mesages.
-%% Args: Socket package as tuple and server state as State
-%% Returns: {noreply, SState}.
-%%----------------------------------------------------------------------
-handle_info({tcp, _Socket, "help" ++ _},
-  State=#sstate{socket=Socket}) ->
-  world_helper:send(Socket,
-    "103 The most commonly used commands are:~n" ++
-    "103    help COMMAND    Print detailed help~n" ++
-    "103    move [1-8]      Move the client to position N~n" ++
-    "103    environ         Show the nearest environ~n" ++
-    "103    quit            Leave this world"
-  ),
+  call_world(Socket, {load, Map}),
+  io:format("Ctl: Socket ~w received load ~s~n", [Socket, [MapString]]),
   
   {noreply, State};
 
@@ -285,7 +159,7 @@ handle_info({tcp, _Socket, "\r\n"}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
   world_helper:send(Socket, "400 unknown command"),
-  io:format("Socket ~w received unknown command: ~s~n", [Socket, Msg]),
+  io:format("Ctl: Socket ~w received unknown command: ~s~n", [Socket, Msg]),
   
   {noreply, State};
 
@@ -297,7 +171,7 @@ handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
   gen_server:call(world_env, death),
-  io:format("Socket ~w closed~n", [Socket]),
+  io:format("Ctl: Socket ~w closed~n", [Socket]),
   
   {stop, normal, State};
 
@@ -309,7 +183,7 @@ handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
   gen_server:call(world_env, death),
-  io:format("Socket ~w closed~n", [Socket]),
+  io:format("Ctl: Socket ~w closed~n", [Socket]),
   
   {stop, normal, State};
 
@@ -320,7 +194,7 @@ handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
 handle_info(E, S) ->
-  io:format("unexpected: ~p~n", [E]),
+  io:format("Ctl: unexpected: ~p~n", [E]),
   
   {noreply, S}.
 
@@ -341,25 +215,16 @@ code_change(_OldVersion, State, _Extra) -> {ok, State}.
 %% Returns: ok | {error, Reason}.
 %%----------------------------------------------------------------------
 call_world(Socket, Command) ->
-  case gen_server:call(world_env, {do, Command}) of
+  case gen_server:call(world_env, Command) of
     ok ->
       world_helper:send(Socket, "201 success");
-    {environ, Environ} ->
-      world_helper:send(Socket, "102 environ ~s", [Environ]);
-    {food, Amount} ->
-      world_helper:send(Socket, "202 food ~B", [Amount]);
-    {error, blocked} ->
-      world_helper:send(Socket, "203 blocked");
-    {error, staffed} ->
-      world_helper:send(Socket, "204 staffed");
+    {map, AsciiMap} ->
+      world_helper:send(Socket, "100 current map"),
+      world_helper:send(Socket, AsciiMap);
     {error, bad_arg} ->
       world_helper:send(Socket, "300 bad argument");
     {error, command_unknown} ->
       world_helper:send(Socket, "400 unknown command");
-    {error, client_unknown} ->
-      world_helper:send(Socket, "403 access denied");
-    {error, death} ->
-      world_helper:send(Socket, "301 death");
     {error, _Reason} ->
       world_helper:send(Socket, "500 server made a boo boo")
   end.
@@ -373,5 +238,4 @@ call_world(Socket, Command) ->
 close_connection(Socket) ->
   world_helper:send(Socket, "200 good bye"),
   gen_tcp:close(Socket),
-  gen_server:call(world_env, death),
-  io:format("Socket ~w closed~n", [Socket]).
+  io:format("Ctl: Socket ~w closed~n", [Socket]).

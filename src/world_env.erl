@@ -70,7 +70,8 @@ init([Map]) when is_list(Map) ->
 %%   world_records.hrl).
 %% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
-handle_call({load, Map}, _From, #world{agents=Agents}) ->
+handle_call({load, Map}, _From, #world{agents=Agents})
+  when is_list(Map) ->
   lists:foreach(fun({Pid, _Coordinates}) ->
       gen_server:cast(Pid, world_destroyed)
     end, Agents),
@@ -80,12 +81,47 @@ handle_call({load, Map}, _From, #world{agents=Agents}) ->
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
+%% Purpose: Show the actual map as ASCII representation.
+%% Args: -
+%% Returns: {reply, {map, AsciiMap}, #world}.
+%%----------------------------------------------------------------------
+handle_call(map, _From, World=#world{map=Map}) ->
+  %% Get max size of map
+  MapCoordinates = lists:map(fun({Coordinates, _}) ->
+                     Coordinates end, Map),
+  {X, Y} = lists:nth(1, lists:sort(
+                          fun({Xa, Ya}, {Xb, Yb}) ->
+                            (Xb < Xa) and (Yb < Ya)
+                          end,
+                        MapCoordinates)),
+  
+  %% create ascii representation based on max size
+  AsciiMap = lists:foldl(
+               fun(Yi, RowAcc) ->
+                 Col = lists:foldl(
+                         fun(Xi, ColAcc) ->
+                           ColAcc ++ ascii_rep(get_sector(Xi, Yi, Map))
+                         end,
+                       [], lists:seq(1, X)),
+                 if
+                   Yi /= Y ->
+                     RowAcc ++ Col ++ "~n";
+                   true ->
+                     RowAcc ++ Col
+                 end
+               end,
+             [], lists:seq(1, Y)),
+  
+  {reply, {map, AsciiMap}, World};
+
+%%----------------------------------------------------------------------
+%% Function: handle_call/3
 %% Purpose: Return the actual internal world of the map.
 %% Args: -
 %% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
 handle_call(state, _From, World) ->
-  {reply, World, World};
+  {reply, {state, World}, World};
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
@@ -188,26 +224,6 @@ handle_call({do, Action}, {Pid, _Tag},
     end
   end,
   
-  %%--------------------------------------------------------------------
-  %% Anonymous function: fun/1
-  %% Purpose: Return character which represents the world of the given
-  %%   sector. Based on Wilson's WOOD1
-  %% Args: Sector.
-  %% Returns: . | O  | F | *
-  %%--------------------------------------------------------------------
-  GetASCIIRepresentation = fun({_, Sector}) ->
-    if
-      Sector#sector.blocked == true ->
-        "O";
-      Sector#sector.staffed == true ->
-        "*";
-      Sector#sector.food /= 0 ->
-        "F";
-      true ->
-        "."
-    end
-  end,
-  
   case lists:keyfind(Pid, 1, Agents) of
     false ->
       {reply, {error, client_unknown}, World};
@@ -237,14 +253,14 @@ handle_call({do, Action}, {Pid, _Tag},
           end;
         environ ->
           Environ = [
-            GetASCIIRepresentation(get_sector(X,   Y-1, Map)),
-            GetASCIIRepresentation(get_sector(X+1, Y-1, Map)),
-            GetASCIIRepresentation(get_sector(X+1, Y,   Map)),
-            GetASCIIRepresentation(get_sector(X+1, Y+1, Map)),
-            GetASCIIRepresentation(get_sector(X,   Y+1, Map)),
-            GetASCIIRepresentation(get_sector(X-1, Y+1, Map)),
-            GetASCIIRepresentation(get_sector(X-1, Y,   Map)),
-            GetASCIIRepresentation(get_sector(X-1, Y-1, Map))
+            ascii_rep(get_sector(X,   Y-1, Map)),
+            ascii_rep(get_sector(X+1, Y-1, Map)),
+            ascii_rep(get_sector(X+1, Y,   Map)),
+            ascii_rep(get_sector(X+1, Y+1, Map)),
+            ascii_rep(get_sector(X,   Y+1, Map)),
+            ascii_rep(get_sector(X-1, Y+1, Map)),
+            ascii_rep(get_sector(X-1, Y,   Map)),
+            ascii_rep(get_sector(X-1, Y-1, Map))
           ],
           
           {reply, {environ, Environ}, World};
@@ -302,4 +318,23 @@ get_sector(X, Y, Map) ->
       {{X, Y}, #sector{blocked=true}};
     SectorList ->
       lists:nth(1, SectorList)
+  end.
+
+%%----------------------------------------------------------------------
+%% Function: ascii_rep/1
+%% Purpose: Return character which represents the world of the given
+%%   sector. Based on Wilson's WOOD1
+%% Args: Sector.
+%% Returns: . | O  | F | *
+%%----------------------------------------------------------------------
+ascii_rep({_, Sector}) ->
+  if
+    Sector#sector.blocked == true ->
+      "O";
+    Sector#sector.staffed == true ->
+      "*";
+    Sector#sector.food /= 0 ->
+      "F";
+    true ->
+      "."
   end.

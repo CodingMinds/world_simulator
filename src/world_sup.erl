@@ -77,7 +77,10 @@ init([]) ->
    [
     {env,
      {world_env, start_link, [Map]},
-     permanent, brutal_kill, worker, [world_env]},
+     permanent, 1000, worker, [world_env]},
+    {ctl_sservsup,
+     {world_ctl_sservsup, start_link, []},
+     permanent, infinity, supervisor, [world_ctl_sservsup]},
     {sservsup,
      {world_sservsup, start_link, []},
      permanent, infinity, supervisor, [world_sservsup]}

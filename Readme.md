@@ -15,7 +15,7 @@ with the following ASCII symbols:
 
 The socket connection use a plain text protocol, which is defined on the
 end of this Reamde file. The movement and position values are based on the
-following table:
+following table (also from Wilsons WOOD1):
 
 8 | 1 | 2  
 7 | * | 3  
@@ -46,8 +46,6 @@ implementations.
 #### Server
 
  * Define how to handle consumed food and implement it
- * Pimp sserver to handle admin port, too
- * Define first admin protocol draft and implement it
  * Prepare some worlds and make them loadable via admin interface
 
 #### Client demos
@@ -60,9 +58,12 @@ implementations.
 world (application)
  '-> world_sup (supervisor)
       |-> world_env (gen_server)
-      '-> world_sservsup (supervisor)
-           '-> world_sserv (gen_server)
+      |-> world_sservsup (supervisor)
+      |    '-> world_sserv (gen_server)
+      '-> world_ctl_sservsup (supervisor)
+           '-> world_ctl_sserv (gen_server)
 </pre>
+
 #### world_sup.erl
 The global supervisor which initialize the whole application. First the
 simulated world and then the supervisor of the socket server.
@@ -72,7 +73,30 @@ The gen_server which represents the virtual world and holds all the logic.
 
 #### world_sservsup.erl and world_sserv.erl
 The socket server which handle incoming connections and forward them to the
-simulated world world_env.erl
+simulated world world_env.erl  
+Listens on the port which is defined in world.app as 'port' (default 4567)
+
+#### world_ctl_sservsup.erl and world_ctl_sserv.erl
+The socket server which handle incoming control connections and forward them
+to the simulated world world_env.erl  
+Listens on the port which is defined in world.app as 'ctl_port' (default 4568)
+
+## Default behaviour
+
+The world is initialized with a small 5x5 example world which shows all possible objects.
+
+To load your own world connect to the control port (see Example usage) and use the command
+'load'. Encode the map with the ASCII symbols described in the section Description; to mark
+the beginning of a new row use the character |. For example the default world (except the
+hard coded and not responding demo agent) could be encoded with the following string:
+
+<pre>
+.....|.....|OO.|...OF|..X..|
+</pre>
+
+As you can see, the third row has only three elements. This should demonstrate, that the
+environment interprets each not explicit defined section as a blocking object. And each
+unknown character (e.g. the X) is interpreted as a free cell.
 
 ## Example Usage
 
@@ -120,7 +144,33 @@ quit
 Connection closed by foreign host.
 </pre>
 
-Hint: To change the listening port modify the environment option 'port' in the file ebin/world.app.
+#### Administration
+
+If the server is running open a telnet connection to the control port
+<pre>
+telnet localhost 4568
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+200 Speak, friend, and ente(r)
+map
+100 current map
+.....
+.....
+OO.OO
+...OF
+*....
+load F...O|....|..........F
+201 success
+map
+100 current map
+F...OOOOOOO
+....OOOOOOO
+..........F
+quit
+200 good bye
+Connection closed by foreign host.
+</pre>
 
 ## Demos
 
@@ -138,7 +188,7 @@ The amount of attempts will be printed to stdout.
 #### Sever
 
 100 ASCII map representation  
-101 world changed  
+101 world changed (not yet implemented)  
 102 environ [.|O|F|*]{8}  
 103 free text help replys
 
@@ -151,21 +201,21 @@ The amount of attempts will be printed to stdout.
 205 failed
 
 300 bad argument  
-301 death
+301 death (not yet implemented)
 
 400 unknown command  
 403 access denied  
-404 not found
+404 not found (not yet implemented)
 
 500 sever made a boo boo  
 501 world destroyed
 
 #### Admin
 
-status  
-load filename  
-kill all  
-shutdown
+map  
+load ASCII_representation  
+kill all (not yet implemented)  
+shutdown (not yet implemented)
 
 quit
 
@@ -184,4 +234,5 @@ quit
  * http://www.uffmm.org/ for theoretical stuff and specifications
 
 ## Licence
+
 [GNU General Public License v3](http://www.gnu.org/licenses/gpl.html)
