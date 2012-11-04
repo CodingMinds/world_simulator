@@ -28,7 +28,7 @@ implementations.
 ## Authors
 
  * Michael Bittorf (Coding Minds)
- * André Feudenreich
+ * André Freudenreich
 
 ## Dependencies
 
