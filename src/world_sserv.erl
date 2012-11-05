@@ -97,12 +97,15 @@ init(Socket) ->
 %% Returns: {noreply, SState} | {stop, {error, Reason}, SState}
 %%----------------------------------------------------------------------
 handle_cast(accept, State = #sstate{socket=LSocket}) ->
-	case gen_tcp:accept(LSocket) of
-	  {ok, Socket} ->
-	    %% request new acceptor from supervisor
-      world_sservsup:start_socket(),
-      
-      %% handle new connection and try to create mapping
+  %% handle new connection
+  Accept = gen_tcp:accept(LSocket),
+  
+  %% request new acceptor from supervisor
+  world_sservsup:start_socket(),
+  
+  %% evaluate accept response and try to create mapping
+  case Accept of
+    {ok, Socket} ->
       io:format("Socket ~w connection established~n", [Socket]),
       case gen_server:call(world_env, birth) of
         ok ->

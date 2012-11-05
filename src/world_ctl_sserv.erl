@@ -82,12 +82,15 @@ init(Socket) ->
 %% Returns: {noreply, SState} | {stop, {error, Reason}, SState}
 %%----------------------------------------------------------------------
 handle_cast(accept, State = #sstate{socket=LSocket}) ->
-	case gen_tcp:accept(LSocket) of
-	  {ok, Socket} ->
-	    %% request new acceptor from supervisor
-      world_sservsup:start_socket(),
-      
-      %% handle new connection
+  %% handle new connection
+  Accept = gen_tcp:accept(LSocket),
+  
+  %% request new acceptor from supervisor
+  world_ctl_sservsup:start_socket(),
+  
+  %% evaluate accept response
+  case Accept of
+    {ok, Socket} ->
       io:format("Ctl: Socket ~w connection established~n", [Socket]),
       world_helper:send(Socket, "200 Speak, friend, and ente(r)"),
       
