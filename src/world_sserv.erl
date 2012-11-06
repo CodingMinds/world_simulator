@@ -182,9 +182,13 @@ handle_info({tcp, _Socket, "environ" ++ _},
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "move " ++ Message},
   State=#sstate{socket=Socket}) ->
-  Direction = list_to_integer(hd(string:tokens(Message, "\r\n "))),
-  call_world(Socket, {move, Direction}),
-  io:format("Socket ~w received move ~B~n", [Socket, Direction]),
+  case catch list_to_integer(hd(string:tokens(Message, "\r\n "))) of
+    {'EXIT', _} ->
+      world_helper:send(Socket, "300 bad argument");
+    Direction ->
+      call_world(Socket, {move, Direction})
+  end,
+  io:format("Socket ~w received move ~s~n", [Socket, Message]),
   
   {noreply, State};
 
