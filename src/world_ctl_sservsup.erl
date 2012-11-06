@@ -48,7 +48,8 @@ start_link() ->
 %%----------------------------------------------------------------------
 init([]) ->
   {ok, Port} = application:get_env(ctl_port),
-  {ok, ListenSocket} = gen_tcp:listen(Port, [{active, once}, {packet, line}]),
+  {ok, ListenSocket} = gen_tcp:listen(Port, [{active, once},
+    {packet, line}]),
   
   spawn_link(fun empty_listeners/0),
   

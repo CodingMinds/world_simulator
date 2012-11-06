@@ -162,7 +162,8 @@ handle_info({tcp, _Socket, "\r\n"}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
   world_helper:send(Socket, "400 unknown command"),
-  io:format("Ctl: Socket ~w received unknown command: ~s~n", [Socket, Msg]),
+  io:format("Ctl: Socket ~w received unknown command: ~s~n",
+    [Socket, Msg]),
   
   {noreply, State};
 
