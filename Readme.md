@@ -45,8 +45,8 @@ implementations.
 
 #### Server
 
- * Define how to handle consumed food and implement it
  * Prepare some worlds and make them loadable via admin interface
+ * Implement more options (like amount of food and energy, costs, etc)
 
 #### Client demos
 
@@ -82,11 +82,11 @@ to the simulated world world_env.erl
 Listens on the port which is defined in world.app as 'ctl_port' (default 4568)
 
 #### world_helper.erl
-Some helper functions which are used inmore than one module.
+Some helper functions which mostly used in more than one module.
 
 ## Default behaviour
 
-The world is initialized with a small 5x5 example world which shows all
+The system is initialized with a small 5x5 example world which shows all
 possible objects.
 
 To load your own world connect to the control port (see Example usage) and use
@@ -103,6 +103,28 @@ As you can see, the third row has only three elements. This should
 demonstrate, that the environment interprets each not explicit defined section
 as a blocking object. And each unknown character (e.g. the X) is interpreted
 as a free cell.
+
+Also the simulator has some configuration options which are not direct tied
+to the world.
+
+ * maximum amount of allowed agents (default: as much as possible)
+ * should consumed food respwan (default: yes)
+ * should consumed food respawn on the same place (default: yes)
+
+All this options can changed on runtime if you are conencted with the control
+port. The following command will set the maximum client count to 7,
+activates the food respawn and let the food respawn on random places.
+
+<pre>
+options 7 true false
+</pre>
+
+The active configuration can be displayed if you use the 'options' command
+without an argument.
+
+Notice: There are more options planed. E.g. the amount of food if an agent
+enters a food section, the amount of start energy of new clients, the amount
+of energy client interactions cost, etc..
 
 ## Example Usage
 
@@ -205,6 +227,7 @@ ctrl port to get the whole environment.
 101 world changed (not yet implemented)  
 102 environ [.|O|F|*]{8}  
 103 free text help replys
+104 option listings
 
 200 welcome in this [1-9]+x[1-9]+ world  
 200 good bye  
@@ -228,6 +251,7 @@ ctrl port to get the whole environment.
 
 map  
 load ASCII_REPRESENTATION  
+options [OPTIONS ..]
 kill all (not yet implemented)  
 shutdown (not yet implemented)
 

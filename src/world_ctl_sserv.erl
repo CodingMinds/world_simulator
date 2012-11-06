@@ -19,6 +19,12 @@
 %%% handle_info({tcp, Socket, "load " ++ MapString}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'load X' messages.
+%%% handle_info({tcp, Socket, "options " ++ OptionString}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'options ..' messages.
+%%% handle_info({tcp, Socket, "options" ++ _}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'options' messages.
 %%% handle_info({tcp, Socket, "\r\n"}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle empty tcp messages.
@@ -136,10 +142,46 @@ handle_info({tcp, _Socket, "map" ++ _},
 handle_info({tcp, _Socket, "load " ++ String},
   State=#sstate{socket=Socket}) ->
   MapString = hd(string:tokens(String, "\r\n")),
-  Map = world_helper:convert_to_map(MapString),
+  Map = world_helper:ascii_to_map(MapString),
   
   call_world(Socket, {load, Map}),
   io:format("Ctl: Socket ~w received load ~s~n", [Socket, [MapString]]),
+  
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'options OptionString' mesages.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, Socket, "options " ++ String},
+  State=#sstate{socket=Socket}) ->
+  case catch hd(string:tokens(String, "\r\n")) of
+    {'EXIT', _} ->
+      world_helper:send(Socket, "300 bad argument");
+    OptionsString ->
+      case world_helper:ascii_to_options(OptionsString) of
+        {ok, Options} ->
+          call_world(Socket, {options, Options});
+        {error, _} ->
+          world_helper:send(Socket, "300 bad argument")
+      end
+  end,
+  io:format("Ctl: Socket ~w received new options ~s", [Socket, [String]]),
+  
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'options' message.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "options" ++ _},
+  State=#sstate{socket=Socket}) ->
+  call_world(Socket, options),
+  io:format("Ctl: Socket ~w received options~n", [Socket]),
   
   {noreply, State};
 
@@ -222,9 +264,14 @@ call_world(Socket, Command) ->
   case gen_server:call(world_env, Command) of
     ok ->
       world_helper:send(Socket, "201 success");
-    {map, AsciiRows} ->
+    {map, Map} ->
+      AsciiRows = world_helper:map_to_ascii(Map),
       AsciiMap = "100 " ++ string:join(AsciiRows, "~n100 "),
       world_helper:send(Socket, AsciiMap);
+    {options, Options} ->
+      AsciiOptions = "104 " ++
+        string:join(world_helper:options_to_ascii(Options), "~n104 "),
+      world_helper:send(Socket, AsciiOptions);
     {error, bad_arg} ->
       world_helper:send(Socket, "300 bad argument");
     {error, command_unknown} ->
