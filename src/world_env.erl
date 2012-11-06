@@ -90,13 +90,7 @@ handle_call({load, Map}, _From, #world{agents=Agents})
 %%----------------------------------------------------------------------
 handle_call(map, _From, World=#world{map=Map}) ->
   %% Get max size of map
-  MapCoordinates = lists:map(fun({Coordinates, _}) ->
-                     Coordinates end, Map),
-  {X, Y} = lists:nth(1, lists:sort(
-                          fun({Xa, Ya}, {Xb, Yb}) ->
-                            (Xb < Xa) and (Yb < Ya)
-                          end,
-                        MapCoordinates)),
+  {X, Y} = world_helper:map_size(Map),
   
   %% create ascii representation based on max size
   AsciiMap = lists:foldl(

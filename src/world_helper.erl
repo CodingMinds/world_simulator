@@ -12,7 +12,7 @@
 -module(world_helper).
 -author('M. Bittorf <info@coding-minds.com>').
 
--export([convert_to_map/1, send/2, send/3]).
+-export([convert_to_map/1, map_size/1, send/2, send/3]).
 
 -include("world_records.hrl").
 
@@ -60,6 +60,20 @@ convert_to_map(MapString) ->
   Sectors),
   
   Map.
+
+%%----------------------------------------------------------------------
+%% Function: map_size/1
+%% Purpose: Extract the biggest X and Y positions of the given map
+%% Args: map Map
+%% Returns: {X, Y}
+%%----------------------------------------------------------------------
+map_size(Map) ->
+  Coordinates = lists:map(fun({{X, Y}, _}) -> {X, Y} end, Map),
+  lists:nth(1,
+    lists:sort(fun({Xa, Ya}, {Xb, Yb}) ->
+                 (Xb < Xa) and (Yb < Ya)
+               end,
+               Coordinates)).
 
 %%----------------------------------------------------------------------
 %% Function: send/2

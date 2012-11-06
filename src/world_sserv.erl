@@ -111,11 +111,7 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
         ok ->
           %% get map size
           {state, World} = gen_server:call(world_env, state),
-          Map = lists:map(fun({Coordinates, _}) ->
-                          Coordinates end, World#world.map),
-          {X, Y} = lists:nth(1,
-                     lists:sort(fun({Xa, Ya}, {Xb, Yb}) ->
-                                (Xb < Xa) and (Yb < Ya) end, Map)),
+          {X, Y} = world_helper:map_size(World#world.map),
           
           world_helper:send(Socket, "200 welcome in this ~Bx~B world",
             [X, Y]),
