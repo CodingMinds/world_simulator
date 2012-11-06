@@ -188,7 +188,7 @@ handle_info({tcp, _Socket, "move " ++ Message},
     Direction ->
       call_world(Socket, {move, Direction})
   end,
-  io:format("Socket ~w received move ~s~n", [Socket, Message]),
+  io:format("Socket ~w received move ~s", [Socket, Message]),
   
   {noreply, State};
 
