@@ -13,6 +13,10 @@
 %%% init([Map])
 %%%   Interface for the behaviour gen_server.
 %%%   Initialice a new world with the map Map (see records.hrl).
+%%% init([Map, Options])
+%%%   Interface for the behaviour gen_server.
+%%%   Initialice a new world with the map Map and the options Options
+%%%   (see records.hrl).
 %%% handle_call({load, Map}, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Replace the actual running map with the new one (see records.hrl).
@@ -104,27 +108,21 @@ handle_call({options, Options}, _From, World)
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
-%% Purpose: Return the actual map as ASCII representation per row.
+%% Purpose: Return the actual map.
 %% Args: -
-%% Returns: {reply, {map, [AsciiRow, ..]}, #world}.
+%% Returns: {reply, {map, Map}, #world}.
 %%----------------------------------------------------------------------
 handle_call(map, _From, World=#world{map=Map}) ->
-  %% Get max size of map
-  {X, Y} = world_helper:map_size(Map),
-  
-  %% create ascii representation based on max size
-  AsciiMap = lists:foldl(
-               fun(Yi, RowAcc) ->
-                 Col = lists:foldl(
-                         fun(Xi, ColAcc) ->
-                           ColAcc ++ ascii_rep(get_sector(Xi, Yi, Map))
-                         end,
-                       [], lists:seq(1, X)),
-                 RowAcc ++ [Col]
-               end,
-             [], lists:seq(1, Y)),
-  
-  {reply, {map, AsciiMap}, World};
+  {reply, {map, Map}, World};
+
+%%----------------------------------------------------------------------
+%% Function: handle_call/3
+%% Purpose: Return the actual options.
+%% Args: -
+%% Returns: {reply, {options, ".."}, #world}.
+%%----------------------------------------------------------------------
+handle_call(options, _From, World=#world{options=Options}) ->
+  {reply, {options, Options}, World};
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
@@ -148,7 +146,7 @@ handle_call(birth, {Pid, _Tag},
       length(Agents) >= Options#options.max_agents ->
       {reply, map_full, World};
     true ->
-      Sector = free_sector(Map),
+      Sector = world_helper:free_sector(Map),
       case Sector of
         false ->
           {reply, map_full, World};
@@ -203,7 +201,7 @@ handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
 %%   {reply, {error, Reason}, #world}.
 %%----------------------------------------------------------------------
 handle_call({do, Action}, {Pid, _Tag},
-  World=#world{map=Map, agents=Agents}) ->
+  World=#world{map=Map, options=Options, agents=Agents}) ->
   %%--------------------------------------------------------------------
   %% Anonymous function: fun/2
   %% Purpose: Check if the applied sector is available for the client
@@ -226,7 +224,8 @@ handle_call({do, Action}, {Pid, _Tag},
                  {CoordinatesNow, SectorNow#sector{staffed=false}}),
         NewMap2 = lists:keyreplace(CoordinatesNew, 1, NewMap,
                   {CoordinatesNew, SectorNew#sector{staffed=true}}),
-        NewWorld = World#world{map=NewMap2, agents=NewAgents},
+        NewWorld = world_helper:consume_food(
+          CoordinatesNew, World#world{map=NewMap2, agents=NewAgents}),
         
         {reply, {food, SectorNew#sector.food}, NewWorld};
       true ->
@@ -248,37 +247,53 @@ handle_call({do, Action}, {Pid, _Tag},
     {_Pid, {X, Y}} ->
       case Action of
         {move, Direction} ->
-          CurrentSector = get_sector(X, Y, Map),
+          CurrentSector = world_helper:get_sector(X, Y, Map),
           case Direction of
             1 ->
-              CheckAndApply(CurrentSector, get_sector(X, Y-1, Map));
+              CheckAndApply(CurrentSector,
+                world_helper:get_sector(X, Y-1, Map));
             2 ->
-              CheckAndApply(CurrentSector, get_sector(X+1, Y-1, Map));
+              CheckAndApply(CurrentSector,
+                world_helper:get_sector(X+1, Y-1, Map));
             3 ->
-              CheckAndApply(CurrentSector, get_sector(X+1, Y, Map));
+              CheckAndApply(CurrentSector,
+                world_helper:get_sector(X+1, Y, Map));
             4 ->
-              CheckAndApply(CurrentSector, get_sector(X+1, Y+1, Map));
+              CheckAndApply(CurrentSector,
+                world_helper:get_sector(X+1, Y+1, Map));
             5 ->
-              CheckAndApply(CurrentSector, get_sector(X, Y+1, Map));
+              CheckAndApply(CurrentSector,
+                world_helper:get_sector(X, Y+1, Map));
             6 ->
-              CheckAndApply(CurrentSector, get_sector(X-1, Y+1, Map));
+              CheckAndApply(CurrentSector,
+                world_helper:get_sector(X-1, Y+1, Map));
             7 ->
-              CheckAndApply(CurrentSector, get_sector(X-1, Y, Map));
+              CheckAndApply(CurrentSector,
+                world_helper:get_sector(X-1, Y, Map));
             8 ->
-              CheckAndApply(CurrentSector, get_sector(X-1, Y-1, Map));
+              CheckAndApply(CurrentSector,
+                world_helper:get_sector(X-1, Y-1, Map));
             _ ->
               {reply, {error, bad_arg}, World}
           end;
         environ ->
           Environ = [
-            ascii_rep(get_sector(X,   Y-1, Map)),
-            ascii_rep(get_sector(X+1, Y-1, Map)),
-            ascii_rep(get_sector(X+1, Y,   Map)),
-            ascii_rep(get_sector(X+1, Y+1, Map)),
-            ascii_rep(get_sector(X,   Y+1, Map)),
-            ascii_rep(get_sector(X-1, Y+1, Map)),
-            ascii_rep(get_sector(X-1, Y,   Map)),
-            ascii_rep(get_sector(X-1, Y-1, Map))
+            world_helper:ascii_rep(
+              world_helper:get_sector(X,   Y-1, Map)),
+            world_helper:ascii_rep(
+              world_helper:get_sector(X+1, Y-1, Map)),
+            world_helper:ascii_rep(
+              world_helper:get_sector(X+1, Y,   Map)),
+            world_helper:ascii_rep(
+              world_helper:get_sector(X+1, Y+1, Map)),
+            world_helper:ascii_rep(
+              world_helper:get_sector(X,   Y+1, Map)),
+            world_helper:ascii_rep(
+              world_helper:get_sector(X-1, Y+1, Map)),
+            world_helper:ascii_rep(
+              world_helper:get_sector(X-1, Y,   Map)),
+            world_helper:ascii_rep(
+              world_helper:get_sector(X-1, Y-1, Map))
           ],
           
           {reply, {environ, Environ}, World};
@@ -304,55 +319,3 @@ terminate(normal, _World) -> ok;
 terminate(_Reason, _World) -> ok.
 handle_info(_Message, World) -> {noreply, World}.
 code_change(_OldVersion, World, _Extra) -> {ok, World}.
-
-%%----------------------------------------------------------------------
-%% Function: free_sector/1
-%% Purpose: Return the coordinates of the next free sector or false
-%% Args: Map as map which should be used.
-%% Returns: {{X, Y}, #sector} | false.
-%%----------------------------------------------------------------------
-free_sector(Map) ->
-  FreeSectors = lists:filter(fun({_, #sector{staffed=Staffed}}) ->
-                             Staffed == false end, Map),
-  case FreeSectors of
-    [] ->
-      false;
-    _ ->
-      [ FreeSector | _ ] = FreeSectors,
-      FreeSector
-  end.
-
-%%----------------------------------------------------------------------
-%% Function: get_sector/3
-%% Purpose: Get the sector on position X and Y of map Map. Return a
-%%  blocked one if there is no sector on this position.
-%% Args: X and Y as coordinates on map Map.
-%% Returns: {{X, Y}, #sector}
-%%----------------------------------------------------------------------
-get_sector(X, Y, Map) ->
-  case lists:filter(fun({{Xm, Ym}, _}) ->
-                    (X==Xm) and (Y==Ym) end, Map) of
-    [] ->
-      {{X, Y}, #sector{blocked=true}};
-    SectorList ->
-      lists:nth(1, SectorList)
-  end.
-
-%%----------------------------------------------------------------------
-%% Function: ascii_rep/1
-%% Purpose: Return character which represents the world of the given
-%%   sector. Based on Wilson's WOOD1
-%% Args: Sector.
-%% Returns: . | O  | F | *
-%%----------------------------------------------------------------------
-ascii_rep({_, Sector}) ->
-  if
-    Sector#sector.blocked == true ->
-      "O";
-    Sector#sector.staffed == true ->
-      "*";
-    Sector#sector.food /= 0 ->
-      "F";
-    true ->
-      "."
-  end.

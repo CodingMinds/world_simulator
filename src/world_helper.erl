@@ -5,24 +5,50 @@
 %%% module.
 %%%---------------------------------------------------------------------
 %%% Exports
-%%% convert_to_map(MapString)
+%%% ascii_to_map(MapString)
 %%%   Translate the given string MapString to a valid map.
+%%% map_to_ascii(Map)
+%%%   Translate a map into as ASCII representation per row.
+%%% map_size(Map)
+%%%   Extract the highest X and Y positions of the given map.
+%%% free_sector(Map)
+%%%   Return the coordinates of the next free sector or false.
+%%% consume_food(Coordinates, World)
+%%%   Will be triggered if some food is consumed and applies the food
+%%%   options to the map.
+%%% ascii_rep({Coordinates, Sector})
+%%%   Return character which represents the world of the given sector.
+%%%   Based on Wilson's WOOD1
+%%% get_sector(X, Y, Map)
+%%%   Get the sector on position X and Y of map Map. Return a blocked
+%%%   one if there is no sector on this position.
+%%% ascii_to_options(OptionsString)
+%%%   Translate a string in a new options record.
+%%% options_to_ascii(Options)
+%%%   Translate a option record into an list of ASCII representations.
+%%% send(Socket, Str)
+%%%   Format message Str and send it to socket Socket.
+%%% send(Socket, Str, args)
+%%%   Format message Str with arguments Args and send it to socket
+%%%   Socket.
 %%%---------------------------------------------------------------------
 
 -module(world_helper).
 -author('M. Bittorf <info@coding-minds.com>').
 
--export([convert_to_map/1, map_size/1, send/2, send/3]).
+-export([ascii_to_map/1, map_to_ascii/1, map_size/1,
+  free_sector/1, consume_food/2, ascii_rep/1, get_sector/3,
+  ascii_to_options/1, options_to_ascii/1, send/2, send/3]).
 
 -include("world_records.hrl").
 
 %%----------------------------------------------------------------------
-%% Function: convert_to_map/1
+%% Function: ascii_to_map/1
 %% Purpose: Translate a string in a new map.
 %% Args: An ASCII string which represents the new map.
 %% Returns: ok | {error, Reason}
 %%----------------------------------------------------------------------
-convert_to_map(MapString) ->
+ascii_to_map(MapString) ->
   %% Split into rows
   Tokens = string:tokens(MapString, "|"),
   
@@ -62,9 +88,30 @@ convert_to_map(MapString) ->
   Map.
 
 %%----------------------------------------------------------------------
+%% Function: map_to_ascii/1
+%% Purpose: Translate a map into as ASCII representation per row.
+%% Args: The map Map.
+%% Returns: [AsciiRow, ..]
+%%----------------------------------------------------------------------
+map_to_ascii(Map) ->
+  %% Get max size of map
+  {X, Y} = world_helper:map_size(Map),
+  
+  %% create ascii representation based on max size
+  lists:foldl(fun(Yi, RowAcc) ->
+                 Col = lists:foldl(
+                         fun(Xi, ColAcc) ->
+                           ColAcc ++ ascii_rep(get_sector(Xi, Yi, Map))
+                         end,
+                       [], lists:seq(1, X)),
+                 RowAcc ++ [Col]
+               end,
+             [], lists:seq(1, Y)).
+
+%%----------------------------------------------------------------------
 %% Function: map_size/1
-%% Purpose: Extract the biggest X and Y positions of the given map
-%% Args: map Map
+%% Purpose: Extract the highest X and Y positions of the given map.
+%% Args: map Map.
 %% Returns: {X, Y}
 %%----------------------------------------------------------------------
 map_size(Map) ->
@@ -76,8 +123,161 @@ map_size(Map) ->
                Coordinates)).
 
 %%----------------------------------------------------------------------
+%% Function: free_sector/1
+%% Purpose: Return the coordinates of the next free sector or false.
+%% Args: Map as map which should be used.
+%% Returns: {{X, Y}, #sector} | false.
+%%----------------------------------------------------------------------
+free_sector(Map) ->
+  FreeSectors = lists:filter(fun({_, #sector{staffed=Staffed}}) ->
+                             Staffed == false end, Map),
+  case FreeSectors of
+    [] ->
+      false;
+    _ ->
+      [ FreeSector | _ ] = FreeSectors,
+      FreeSector
+  end.
+
+%%----------------------------------------------------------------------
+%% Function: consume_food/2
+%% Purpose: Will be triggered if some food is consumed and applies
+%%   the food options to the map.
+%% Args: {X, Y} coordinates of food, World as world.
+%% Returns: The modified world.
+%%----------------------------------------------------------------------
+consume_food({X, Y}, World=#world{map=Map, options=Options}) ->
+  {Coordinates, Sector} = world_helper:get_sector(X, Y, Map),
+  case Options#options.respawn_food of
+    true ->
+      case Options#options.static_food of
+        true -> % nothing happens
+          World;
+        _ -> % try to move food away
+          % search possible new locations
+          PosTargets = lists:filter(fun({_ICoordinates, ISector}) ->
+                         (ISector#sector.blocked /= true) and
+                         (ISector#sector.food == 0)
+                       end, Map),
+          case PosTargets of
+            [] -> % no possible movements
+              World;
+            Targets -> % move
+              random:seed(now()),
+              
+              {Coordinates2, Sector2} =
+                lists:nth(random:uniform(length(Targets)), Targets),
+              
+              io:format("move food from ~w to ~w~n",
+                [Coordinates, Coordinates2]),
+              
+              Map2 = lists:keyreplace(Coordinates, 1, Map,
+                {Coordinates, Sector#sector{food=0}}),
+              
+              Map3 = lists:keyreplace(Coordinates2, 1, Map2,
+               {Coordinates2, Sector2#sector{food=Sector#sector.food}}),
+              
+              World#world{map=Map3}
+          end
+      end;
+    _ -> % delete food from map
+      NewMap = lists:keyreplace({X, Y}, 1, Map,
+        {{X, Y}, Sector#sector{food=0}}),
+      World#world{map=NewMap}
+  end.
+
+%%----------------------------------------------------------------------
+%% Function: ascii_rep/1
+%% Purpose: Return character which represents the world of the given
+%%   sector. Based on Wilson's WOOD1.
+%% Args: Sector.
+%% Returns: . | O  | F | *
+%%----------------------------------------------------------------------
+ascii_rep({_Coordinates, Sector}) ->
+  if
+    Sector#sector.blocked == true ->
+      "O";
+    Sector#sector.staffed == true ->
+      "*";
+    Sector#sector.food /= 0 ->
+      "F";
+    true ->
+      "."
+  end.
+
+%%----------------------------------------------------------------------
+%% Function: get_sector/3
+%% Purpose: Get the sector on position X and Y of map Map. Return a
+%%  blocked one if there is no sector on this position.
+%% Args: X and Y as coordinates on map Map.
+%% Returns: {{X, Y}, #sector}
+%%----------------------------------------------------------------------
+get_sector(X, Y, Map) ->
+  case lists:filter(fun({{Xm, Ym}, _}) ->
+                    (X==Xm) and (Y==Ym) end, Map) of
+    [] ->
+      {{X, Y}, #sector{blocked=true}};
+    SectorList ->
+      lists:nth(1, SectorList)
+  end.
+
+%%----------------------------------------------------------------------
+%% Function: ascii_to_options/1
+%% Purpose: Translate a string in a new options record.
+%% Args: An ASCII string which represents the new options.
+%% Returns: {ok, #options} | {error, Reason}
+%%----------------------------------------------------------------------
+ascii_to_options(OptionsString) ->
+  Result = (catch case string:tokens(OptionsString, " ") of
+    [MaxAgents, RespawnFood, StaticFood] ->
+      MAgents = list_to_integer(MaxAgents),
+      RFood = list_to_atom(RespawnFood),
+      SFood = list_to_atom(StaticFood),
+      
+      % ugly way to verify that the atoms are true or false
+      % and the integer >= 0
+      if
+        MAgents < 0 ->
+          {error, bad_arg};
+        RFood or SFood or true ->
+          #options{
+            max_agents = MAgents,
+            respawn_food = RFood,
+            static_food = SFood
+          };
+        true ->
+          {error, bad_arg}
+      end;
+    _ ->
+      {error, bad_arg}
+  end),
+  
+  case Result of
+    {'EXIT', _Reason} ->
+      {error, bad_arg};
+    {error, _Reason} ->
+      {error, bad_arg};
+    R ->
+      {ok, R}
+  end.
+
+%%----------------------------------------------------------------------
+%% Function: options_to_ascii/1
+%% Purpose: Translate a option record into a list of ASCII
+%%   representations.
+%% Args: The option Option.
+%% Returns: String.
+%%----------------------------------------------------------------------
+options_to_ascii(Options) when is_record(Options, options) ->
+  [
+  "max agents: " ++ integer_to_list(Options#options.max_agents),
+  "respawn food: " ++ atom_to_list(Options#options.respawn_food),
+  "static food positions: " ++ atom_to_list(Options#options.static_food)
+  ].
+
+%%----------------------------------------------------------------------
 %% Function: send/2
-%% Purpose: Format message Str and send it to socket Socket
+%% Purpose: Format message Str and send it to socket Socket.
 %% Args: Active socket Socket and message Str
 %% Returns: ok
 %%----------------------------------------------------------------------
@@ -87,7 +287,7 @@ send(Socket, Str) ->
 %%----------------------------------------------------------------------
 %% Function: send/3
 %% Purpose: Format message Str with arguments Args and send it to socket
-%%   Socket
+%%   Socket.
 %% Args: Active socket Socket, format arguments Args and message Str
 %% Returns: ok
 %%----------------------------------------------------------------------

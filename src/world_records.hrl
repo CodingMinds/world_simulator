@@ -6,8 +6,8 @@
 %%   respawn_time: A integer (default is 0).
 %%   max_agents: A integer (default is 0).
 %%----------------------------------------------------------------------
--record(options, {static_food = true, respawn_food = true,
-  respawn_time = 0, max_agents = 0}).
+-record(options, {max_agents = 0, respawn_food = true,
+  static_food = true, respawn_time = 0}).
 
 %%---------------------------------------------------------------------
 %% Data Type: world
