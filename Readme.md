@@ -180,8 +180,7 @@ Connection closed by foreign host.
 
 #### socket_demo.sci
 
-A short Scilab program which connects to the server and let it interact
-with the world.
+A short Scilab socket connection demo.
 
 #### user_interaction.sci
 
