@@ -16,6 +16,9 @@
 %%% handle_call({load, Map}, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Replace the actual running map with the new one (see records.hrl).
+%%% handle_call({options, Options}, From, World)
+%%%   Interface for the behaviour gen_server.
+%%%   Set new options (see records.hrl).
 %%% handle_call(map, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Return the actual map as ASCII representation per row.
@@ -58,12 +61,16 @@ start_link(Map) ->
 %% Function: init/1
 %% Purpose: Interface for the behaviour gen_server.
 %%   Initialice a new world with map Map.
-%% Args: The map Map which represents the modeled virtual world  (see
-%%   world_records.hrl).
+%% Args: The map Map which represents the modeled virtual world and
+%%   optional with the options record (see world_records.hrl).
 %% Returns: {ok, World} with World as initial world
 %%----------------------------------------------------------------------
 init([Map]) when is_list(Map) ->
   World = #world{map = Map},
+  {ok, World};
+
+init([Map, Options]) when is_list(Map), is_record(Options, options) ->
+  World = #world{map = Map, options = Options},
   {ok, World}.
 
 %%----------------------------------------------------------------------
@@ -79,6 +86,19 @@ handle_call({load, Map}, _From, #world{agents=Agents})
       gen_server:cast(Pid, world_destroyed)
     end, Agents),
   NewWorld = #world{map = Map, agents=[]},
+  
+  {reply, ok, NewWorld};
+
+%%----------------------------------------------------------------------
+%% Function: handle_call/3
+%% Purpose: Set a new set of options.
+%% Args: The new options record (see world_records.hrl).
+%% Returns: {reply, ok, #world}.
+%%----------------------------------------------------------------------
+handle_call({options, Options}, _From, World)
+  when is_record(Options, options) ->
+  
+  NewWorld = World#world{options=Options},
   
   {reply, ok, NewWorld};
 
@@ -121,20 +141,26 @@ handle_call(state, _From, World) ->
 %% Args: -
 %% Returns: {reply, {ok, MapSize}, #world} | {reply, map_full, #world}.
 %%----------------------------------------------------------------------
-handle_call(birth, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
-  Sector = free_sector(Map),
-  case Sector of
-    false ->
+handle_call(birth, {Pid, _Tag},
+  World=#world{options=Options, map=Map, agents=Agents}) ->
+  if
+    Options#options.max_agents > 0,
+      length(Agents) >= Options#options.max_agents ->
       {reply, map_full, World};
-    {Coordinates, Properties} ->
-      
-      NewMap = lists:keyreplace(Coordinates, 1, Map, {Coordinates,
-               Properties#sector{staffed=true}}),
-      
-      NewWorld = World#world{map = NewMap,
-                 agents = Agents ++ [ {Pid, Coordinates} ]},
-            
-      {reply, ok, NewWorld}
+    true ->
+      Sector = free_sector(Map),
+      case Sector of
+        false ->
+          {reply, map_full, World};
+        {Coordinates, Properties} ->
+          NewMap = lists:keyreplace(Coordinates, 1, Map, {Coordinates,
+                   Properties#sector{staffed=true}}),
+          
+          NewWorld = World#world{map = NewMap,
+                     agents = Agents ++ [ {Pid, Coordinates} ]},
+                
+          {reply, ok, NewWorld}
+      end
   end;
 
 %%----------------------------------------------------------------------
