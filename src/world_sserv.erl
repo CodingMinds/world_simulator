@@ -10,6 +10,9 @@
 %%% handle_cast(accept, From, State)
 %%%   Interface for the behaviour gen_server.
 %%%   Informs the server to accept the incoming connection.
+%%% handle_cast(world_changed, From, State)
+%%%   Interface for the behaviour gen_server.
+%%%   The world has changed.
 %%% handle_cast(world_destroyed, From, State)
 %%%   Interface for the behaviour gen_server.
 %%%   The world was destroyed. Close the connection and Terminate.
@@ -137,10 +140,20 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
 
 %%----------------------------------------------------------------------
 %% Function: handle_cast/2
+%% Purpose: The world has changed.
+%% Args: -
+%% Returns: {noreply, SState}
+%%----------------------------------------------------------------------
+handle_cast(world_changed, SState = #sstate{socket=Socket}) ->
+  world_helper:send(Socket, "101 world changed"),
+  
+  {noreply, SState};
+
+%%----------------------------------------------------------------------
+%% Function: handle_cast/2
 %% Purpose: The world was destroyed. Close the connection and terminate.
 %% Args: -
-%% Returns: {noreply, SState} | {stop, normal, SState} |
-%%   {stop, {error, Reason}, SState}
+%% Returns: {stop, normal, SState}
 %%----------------------------------------------------------------------
 handle_cast(world_destroyed, SState = #sstate{socket=Socket}) ->
   world_helper:send(Socket, "501 world destroyed"),

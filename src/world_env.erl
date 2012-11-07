@@ -113,7 +113,7 @@ handle_call({map, Map}, _From, World=#world{agents=Agents})
 %% Args: The new options record (see world_records.hrl).
 %% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
-handle_call({options, Options}, _From, World)
+handle_call({options, Options}, _From, World=#world{agents=Agents})
   when is_record(Options, options) ->
   
   NewWorld = World#world{options=Options},
@@ -121,6 +121,11 @@ handle_call({options, Options}, _From, World)
   AsciiOptions = world_helper:options_to_ascii(Options),
   world_helper:log(env, "Loaded options ~n" ++
     string:join(AsciiOptions, "~n")),
+  
+  % send broadcast to all clients
+  lists:foreach(fun({Pid, _Coordinates}) ->
+    gen_server:cast(Pid, world_changed)
+  end, Agents),
   
   {reply, ok, NewWorld};
 

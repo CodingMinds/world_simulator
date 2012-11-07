@@ -152,7 +152,8 @@ free_sector(Map) ->
 %% Args: {X, Y} coordinates of food, World as world.
 %% Returns: The modified world.
 %%----------------------------------------------------------------------
-consume_food({X, Y}, World=#world{map=Map, options=Options}) ->
+consume_food({X, Y}, World=#world{map=Map, options=Options,
+  agents=Agents}) ->
   {Coordinates, Sector} = world_helper:get_sector(X, Y, Map),
   case Options#options.respawn_food of
     true ->
@@ -174,14 +175,19 @@ consume_food({X, Y}, World=#world{map=Map, options=Options}) ->
               {Coordinates2, Sector2} =
                 lists:nth(random:uniform(length(Targets)), Targets),
               
-              log(env, "move food from ~w to ~w~n",
-                [Coordinates, Coordinates2]),
-              
               Map2 = lists:keyreplace(Coordinates, 1, Map,
                 {Coordinates, Sector#sector{food=0}}),
               
               Map3 = lists:keyreplace(Coordinates2, 1, Map2,
                {Coordinates2, Sector2#sector{food=Sector#sector.food}}),
+              
+              log(env, "moved food from ~w to ~w",
+                [Coordinates, Coordinates2]),
+              
+              % send broadcast to all clients
+              lists:foreach(fun({Pid, _Coordinates}) ->
+                gen_server:cast(Pid, world_changed)
+              end, Agents),
               
               World#world{map=Map3}
           end

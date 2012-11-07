@@ -231,7 +231,7 @@ ctrl port to get the whole environment.
 #### Sever
 
 100 ASCII map representation  
-101 world changed (not yet implemented)  
+101 world changed  
 102 environ [.|O|F|*]{8}  
 103 free text help replys
 104 option listings
