@@ -239,7 +239,7 @@ ctrl port to get the whole environment.
 200 welcome in this [1-9]+x[1-9]+ world  
 200 good bye  
 201 success  
-202 food N  
+202 food [0-9]+  
 203 blocked  
 204 staffed  
 205 failed
@@ -257,7 +257,7 @@ ctrl port to get the whole environment.
 #### Admin
 
 map [ASCII_REPRESENTATION]  
-options [OPTIONS ..]
+options [OPTIONS ..]  
 kill all (not yet implemented)  
 shutdown (not yet implemented)
 
