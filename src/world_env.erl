@@ -37,7 +37,7 @@
 %%%   Remove the agent behind pid From from the map.
 %%% handle_call({do, Action}, From, World)
 %%%   Interface for the behaviour gen_server.
-%%%   Try to fullfill the requested Action.
+%%%   Try to fulfill the requested Action.
 %%%---------------------------------------------------------------------
 
 -module(world_env).
@@ -71,10 +71,20 @@ start_link(Map) ->
 %%----------------------------------------------------------------------
 init([Map]) when is_list(Map) ->
   World = #world{map = Map},
+  AsciiRows = world_helper:map_to_ascii(Map),
+  world_helper:log(env, "World started with map ~n" ++
+    string:join(AsciiRows, "~n")),
+  
   {ok, World};
 
 init([Map, Options]) when is_list(Map), is_record(Options, options) ->
   World = #world{map = Map, options = Options},
+  AsciiRows = world_helper:map_to_ascii(Map),
+  AsciiOptions = world_helper:options_to_ascii(Options),
+  world_helper:log(env, "World started with map ~n" ++
+    string:join(AsciiRows, "~n") ++ "~n and options ~n" ++
+    string:join(AsciiOptions, "~n")),
+  
   {ok, World}.
 
 %%----------------------------------------------------------------------
@@ -84,12 +94,16 @@ init([Map, Options]) when is_list(Map), is_record(Options, options) ->
 %%   world_records.hrl).
 %% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
-handle_call({load, Map}, _From, #world{agents=Agents})
+handle_call({load, Map}, _From, World=#world{agents=Agents})
   when is_list(Map) ->
   lists:foreach(fun({Pid, _Coordinates}) ->
       gen_server:cast(Pid, world_destroyed)
     end, Agents),
-  NewWorld = #world{map = Map, agents=[]},
+  NewWorld = World#world{map = Map, agents=[]},
+  
+  AsciiRows = world_helper:map_to_ascii(Map),
+  world_helper:log(env, "Loaded map ~n" ++
+    string:join(AsciiRows, "~n")),
   
   {reply, ok, NewWorld};
 
@@ -103,6 +117,10 @@ handle_call({options, Options}, _From, World)
   when is_record(Options, options) ->
   
   NewWorld = World#world{options=Options},
+  
+  AsciiOptions = world_helper:options_to_ascii(Options),
+  world_helper:log(env, "Loaded options ~n" ++
+    string:join(AsciiOptions, "~n")),
   
   {reply, ok, NewWorld};
 
@@ -156,7 +174,9 @@ handle_call(birth, {Pid, _Tag},
           
           NewWorld = World#world{map = NewMap,
                      agents = Agents ++ [ {Pid, Coordinates} ]},
-                
+           
+           world_helper:log(client, "Client ~w entered world", [Pid]),
+           
           {reply, ok, NewWorld}
       end
   end;
@@ -190,6 +210,8 @@ handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
   
   NewWorld = World#world{map=NewMap, agents = NewAgents},
   
+  world_helper:log(client, "Client ~w left world", [Pid]),
+  
   {reply, ok, NewWorld};
 
 %%----------------------------------------------------------------------
@@ -214,8 +236,14 @@ handle_call({do, Action}, {Pid, _Tag},
     {CoordinatesNew, SectorNew}) ->
     if
       SectorNew#sector.blocked == true ->
+        world_helper:log(client, "Client ~w tried ~w: blocked",
+          [Pid, CoordinatesNew]),
+        
         {reply, {error, blocked}, World};
       SectorNew#sector.staffed == true ->
+        world_helper:log(client, "Client ~w tried ~w: staffed",
+          [Pid, CoordinatesNew]),
+        
         {reply, {error, staffed}, World};
       SectorNew#sector.food /= 0 ->
         NewAgents = lists:keyreplace(Pid, 1, Agents,
@@ -227,6 +255,9 @@ handle_call({do, Action}, {Pid, _Tag},
         NewWorld = world_helper:consume_food(
           CoordinatesNew, World#world{map=NewMap2, agents=NewAgents}),
         
+        world_helper:log(client, "Client ~w tried ~w: food ~B",
+          [Pid, CoordinatesNew, SectorNew#sector.food]),
+        
         {reply, {food, SectorNew#sector.food}, NewWorld};
       true ->
         NewAgents = lists:keyreplace(Pid, 1, Agents,
@@ -237,6 +268,9 @@ handle_call({do, Action}, {Pid, _Tag},
                   {CoordinatesNew, SectorNew#sector{staffed=true}}),
         NewWorld = World#world{map=NewMap2, agents=NewAgents},
         
+        world_helper:log(client, "Client ~w tried ~w: success",
+          [Pid, CoordinatesNew]),
+          
         {reply, ok, NewWorld}
     end
   end,

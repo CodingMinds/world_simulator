@@ -28,9 +28,14 @@
 %%%   Translate a option record into an list of ASCII representations.
 %%% send(Socket, Str)
 %%%   Format message Str and send it to socket Socket.
-%%% send(Socket, Str, args)
+%%% send(Socket, Str, Args)
 %%%   Format message Str with arguments Args and send it to socket
 %%%   Socket.
+%%% send(Target, Str)
+%%%   Send message Str with target Target to logging server.
+%%% send(Target, Str, Args)
+%%%   Format message Str with arguments Args and send it with target
+%%%   Target to logging server.
 %%%---------------------------------------------------------------------
 
 -module(world_helper).
@@ -38,7 +43,8 @@
 
 -export([ascii_to_map/1, map_to_ascii/1, map_size/1,
   free_sector/1, consume_food/2, ascii_rep/1, get_sector/3,
-  ascii_to_options/1, options_to_ascii/1, send/2, send/3]).
+  ascii_to_options/1, options_to_ascii/1, send/2, send/3, log/2,
+  log/3]).
 
 -include("world_records.hrl").
 
@@ -168,7 +174,7 @@ consume_food({X, Y}, World=#world{map=Map, options=Options}) ->
               {Coordinates2, Sector2} =
                 lists:nth(random:uniform(length(Targets)), Targets),
               
-              io:format("move food from ~w to ~w~n",
+              log(env, "move food from ~w to ~w~n",
                 [Coordinates, Coordinates2]),
               
               Map2 = lists:keyreplace(Coordinates, 1, Map,
@@ -277,7 +283,7 @@ options_to_ascii(Options) when is_record(Options, options) ->
 
 %%----------------------------------------------------------------------
 %% Function: send/2
-%% Purpose: Format message Str and send it to socket Socket.
+%% Purpose: Send message Str to socket Socket.
 %% Args: Active socket Socket and message Str
 %% Returns: ok
 %%----------------------------------------------------------------------
@@ -292,6 +298,26 @@ send(Socket, Str) ->
 %% Returns: ok
 %%----------------------------------------------------------------------
 send(Socket, Str, Args) ->
-  gen_tcp:send(Socket, io_lib:format(Str++"~n", Args)),
+  gen_tcp:send(Socket, io_lib:format(Str ++ "~n", Args)),
   inet:setopts(Socket, [{active, once}]),
   ok.
+
+%%----------------------------------------------------------------------
+%% Function: log/2
+%% Purpose: Send message Str with target Target to logging server.
+%% Args: Message Str and target Target.
+%% Returns: ok
+%%----------------------------------------------------------------------
+log(Target, Str) ->
+  log(Target, Str, []).
+
+%%----------------------------------------------------------------------
+%% Function: log/3
+%% Purpose: Format message Str with arguments Args and send it with
+%%   target Target to logging server.
+%% Args: Message Str, format arguments Arg and target Target.
+%% Returns: ok
+%%----------------------------------------------------------------------
+log(Target, Str, Args) ->
+  gen_server:cast(world_logging, {log, Target,
+    io_lib:format(Str ++ "~n", Args)}).

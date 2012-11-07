@@ -97,12 +97,14 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
   %% evaluate accept response
   case Accept of
     {ok, Socket} ->
-      io:format("Ctl: Socket ~w connection established~n", [Socket]),
+      world_helper:log(info, "Ctl: Socket ~w connection established",
+        [Socket]),
       world_helper:send(Socket, "200 Speak, friend, and ente(r)"),
       
       {noreply, State#sstate{socket=Socket}};
     {error, Reason} ->
-      io:format("Ctl: Socket connection error ~w~n", [Reason]),
+      world_helper:log(info, "Ctl: Socket connection error ~w",
+        [Reason]),
       
       {stop, {error, Reason}, State}
   end.
@@ -115,7 +117,7 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "quit" ++ _},
   State=#sstate{socket=Socket}) ->
-  io:format("Ctl: Socket ~w received quit~n", [Socket]),
+  world_helper:log(info, "Ctl: Socket ~w received quit", [Socket]),
   close_connection(Socket),
   
   {stop, normal, State};
@@ -129,7 +131,7 @@ handle_info({tcp, _Socket, "quit" ++ _},
 handle_info({tcp, _Socket, "map" ++ _},
   State=#sstate{socket=Socket}) ->
   call_world(Socket, map),
-  io:format("Ctl: Socket ~w received map~n", [Socket]),
+  world_helper:log(info, "Ctl: Socket ~w received map", [Socket]),
   
   {noreply, State};
 
@@ -145,7 +147,8 @@ handle_info({tcp, _Socket, "load " ++ String},
   Map = world_helper:ascii_to_map(MapString),
   
   call_world(Socket, {load, Map}),
-  io:format("Ctl: Socket ~w received load ~s~n", [Socket, [MapString]]),
+  world_helper:log(info, "Ctl: Socket ~w received load ~s",
+    [Socket, [MapString]]),
   
   {noreply, State};
 
@@ -168,7 +171,8 @@ handle_info({tcp, Socket, "options " ++ String},
           world_helper:send(Socket, "300 bad argument")
       end
   end,
-  io:format("Ctl: Socket ~w received new options ~s", [Socket, [String]]),
+  world_helper:log(info, "Ctl: Socket ~w received new options ~s",
+    [Socket, [String]]),
   
   {noreply, State};
 
@@ -181,7 +185,7 @@ handle_info({tcp, Socket, "options " ++ String},
 handle_info({tcp, _Socket, "options" ++ _},
   State=#sstate{socket=Socket}) ->
   call_world(Socket, options),
-  io:format("Ctl: Socket ~w received options~n", [Socket]),
+  world_helper:log(info, "Ctl: Socket ~w received options", [Socket]),
   
   {noreply, State};
 
@@ -204,8 +208,8 @@ handle_info({tcp, _Socket, "\r\n"}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
   world_helper:send(Socket, "400 unknown command"),
-  io:format("Ctl: Socket ~w received unknown command: ~s~n",
-    [Socket, Msg]),
+  world_helper:log(info,
+    "Ctl: Socket ~w received unknown command: ~s", [Socket, Msg]),
   
   {noreply, State};
 
@@ -217,7 +221,7 @@ handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
   gen_server:call(world_env, death),
-  io:format("Ctl: Socket ~w closed~n", [Socket]),
+  world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
   
   {stop, normal, State};
 
@@ -229,7 +233,7 @@ handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
   gen_server:call(world_env, death),
-  io:format("Ctl: Socket ~w closed~n", [Socket]),
+  world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
   
   {stop, normal, State};
 
@@ -240,7 +244,7 @@ handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
 handle_info(E, S) ->
-  io:format("Ctl: unexpected: ~p~n", [E]),
+  world_helper:log(info, "Ctl: unexpected: ~p", [E]),
   
   {noreply, S}.
 
@@ -289,4 +293,4 @@ call_world(Socket, Command) ->
 close_connection(Socket) ->
   world_helper:send(Socket, "200 good bye"),
   gen_tcp:close(Socket),
-  io:format("Ctl: Socket ~w closed~n", [Socket]).
+  world_helper:log(info, "Ctl: Socket ~w closed", [Socket]).

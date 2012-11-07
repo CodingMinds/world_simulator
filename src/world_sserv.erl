@@ -106,7 +106,8 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
   %% evaluate accept response and try to create mapping
   case Accept of
     {ok, Socket} ->
-      io:format("Socket ~w connection established~n", [Socket]),
+      world_helper:log(info, "Socket ~w connection established",
+        [Socket]),
       case gen_server:call(world_env, birth) of
         ok ->
           %% get map size
@@ -129,7 +130,7 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
           {stop, {error, unknown}, State}
       end;
     {error, Reason} ->
-      io:format("Socket connection error ~w~n", [Reason]),
+      world_helper:log(info, "Socket connection error ~w", [Reason]),
       
       {stop, {error, Reason}, State}
   end;
@@ -156,7 +157,7 @@ handle_cast(world_destroyed, SState = #sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "quit" ++ _},
   State=#sstate{socket=Socket}) ->
-  io:format("Socket ~w received quit~n", [Socket]),
+  world_helper:log(info, "Socket ~w received quit", [Socket]),
   close_connection(Socket),
   
   {stop, normal, State};
@@ -170,7 +171,7 @@ handle_info({tcp, _Socket, "quit" ++ _},
 handle_info({tcp, _Socket, "environ" ++ _},
   State=#sstate{socket=Socket}) ->
   call_world(Socket, environ),
-  io:format("Socket ~w received environ~n", [Socket]),
+  world_helper:log(info, "Socket ~w received environ", [Socket]),
   
   {noreply, State};
 
@@ -188,7 +189,8 @@ handle_info({tcp, _Socket, "move " ++ Message},
     Direction ->
       call_world(Socket, {move, Direction})
   end,
-  io:format("Socket ~w received move ~s", [Socket, Message]),
+  world_helper:log(info, "Socket ~w received move ~s",
+    [Socket, Message]),
   
   {noreply, State};
 
@@ -288,7 +290,8 @@ handle_info({tcp, _Socket, "\r\n"}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
   world_helper:send(Socket, "400 unknown command"),
-  io:format("Socket ~w received unknown command: ~s~n", [Socket, Msg]),
+  world_helper:log(info, "Socket ~w received unknown command: ~s",
+    [Socket, Msg]),
   
   {noreply, State};
 
@@ -300,7 +303,7 @@ handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
   gen_server:call(world_env, death),
-  io:format("Socket ~w closed~n", [Socket]),
+  world_helper:log(info, "Socket ~w closed", [Socket]),
   
   {stop, normal, State};
 
@@ -312,7 +315,7 @@ handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
   gen_server:call(world_env, death),
-  io:format("Socket ~w closed~n", [Socket]),
+  world_helper:log(info, "Socket ~w closed", [Socket]),
   
   {stop, normal, State};
 
@@ -323,7 +326,7 @@ handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
 handle_info(E, S) ->
-  io:format("unexpected: ~p~n", [E]),
+  world_helper:log(info, "unexpected: ~p", [E]),
   
   {noreply, S}.
 
@@ -377,4 +380,4 @@ close_connection(Socket) ->
   world_helper:send(Socket, "200 good bye"),
   gen_tcp:close(Socket),
   gen_server:call(world_env, death),
-  io:format("Socket ~w closed~n", [Socket]).
+  world_helper:log(info, "Socket ~w closed", [Socket]).

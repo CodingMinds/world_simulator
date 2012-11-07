@@ -75,9 +75,12 @@ init([]) ->
   {ok,
    {{rest_for_one, MaxRestart, MaxTime},
    [
+    {logging,
+     {world_logging, start_link, []},
+     permanent, 500, worker, [world_logging]},
     {env,
      {world_env, start_link, [Map]},
-     permanent, 1000, worker, [world_env]},
+     permanent, 500, worker, [world_env]},
     {ctl_sservsup,
      {world_ctl_sservsup, start_link, []},
      permanent, infinity, supervisor, [world_ctl_sservsup]},

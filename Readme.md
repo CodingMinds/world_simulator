@@ -60,8 +60,9 @@ world (application)
       |-> world_env (gen_server)
       |-> world_ctl_sservsup (supervisor)
       |    '-> world_ctl_sserv (gen_server)
-      '-> world_sservsup (supervisor)
-           '-> world_sserv (gen_server)
+      |-> world_sservsup (supervisor)
+      |    '-> world_sserv (gen_server)
+      '-> world_logging (gen_server)
 </pre>
 
 #### world_sup.erl
@@ -80,6 +81,12 @@ Listens on the port which is defined in world.app as 'port' (default 4567)
 The socket server which handle incoming control connections and forward them
 to the simulated world world_env.erl  
 Listens on the port which is defined in world.app as 'ctl_port' (default 4568)
+
+#### world_logging.erl
+A simple logging server which writes the messages from client and environment
+changes/action into separate files.  
+The location of the files is defined in world.app as log_client, log_env and
+log_info.
 
 #### world_helper.erl
 Some helper functions which mostly used in more than one module.
