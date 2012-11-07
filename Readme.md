@@ -233,7 +233,7 @@ ctrl port to get the whole environment.
 100 ASCII map representation  
 101 world changed  
 102 environ [.|O|F|*]{8}  
-103 free text help replys
+103 free text help replys  
 104 option listings
 
 200 welcome in this [1-9]+x[1-9]+ world  
