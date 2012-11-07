@@ -201,7 +201,7 @@ handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
 %%   {reply, {error, Reason}, #world}.
 %%----------------------------------------------------------------------
 handle_call({do, Action}, {Pid, _Tag},
-  World=#world{map=Map, options=Options, agents=Agents}) ->
+  World=#world{map=Map, agents=Agents}) ->
   %%--------------------------------------------------------------------
   %% Anonymous function: fun/2
   %% Purpose: Check if the applied sector is available for the client
