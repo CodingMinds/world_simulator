@@ -57,12 +57,12 @@ implementations.
 <pre>
 world (application)
  '-> world_sup (supervisor)
+      |-> world_logging (gen_server)
       |-> world_env (gen_server)
       |-> world_ctl_sservsup (supervisor)
       |    '-> world_ctl_sserv (gen_server)
-      |-> world_sservsup (supervisor)
-      |    '-> world_sserv (gen_server)
-      '-> world_logging (gen_server)
+      '-> world_sservsup (supervisor)
+           '-> world_sserv (gen_server)
 </pre>
 
 #### world_sup.erl
