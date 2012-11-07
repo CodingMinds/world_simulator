@@ -13,12 +13,12 @@
 %%% handle_info({tcp, Socket, "quit" ++ _}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'quit' messages.
+%%% handle_info({tcp, Socket, "map " ++ MapString}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'map X' messages.
 %%% handle_info({tcp, Socket, "map" ++ _}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'map' messages.
-%%% handle_info({tcp, Socket, "load " ++ MapString}
-%%%   Interface for the behaviour gen_server.
-%%%   Handle tcp 'load X' messages.
 %%% handle_info({tcp, Socket, "options " ++ OptionString}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'options ..' messages.
@@ -124,6 +124,23 @@ handle_info({tcp, _Socket, "quit" ++ _},
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
+%% Purpose: Handle tcp 'map MapString' mesages.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "map " ++ String},
+  State=#sstate{socket=Socket}) ->
+  MapString = hd(string:tokens(String, "\r\n")),
+  Map = world_helper:ascii_to_map(MapString),
+  
+  call_world(Socket, {map, Map}),
+  world_helper:log(info, "Ctl: Socket ~w received map ~s",
+    [Socket, [MapString]]),
+  
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
 %% Purpose: Handle tcp 'map' message.
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, SState}.
@@ -132,23 +149,6 @@ handle_info({tcp, _Socket, "map" ++ _},
   State=#sstate{socket=Socket}) ->
   call_world(Socket, map),
   world_helper:log(info, "Ctl: Socket ~w received map", [Socket]),
-  
-  {noreply, State};
-
-%%----------------------------------------------------------------------
-%% Function: handle_info/2
-%% Purpose: Handle tcp 'load MapString' mesages.
-%% Args: Socket package as tuple and server state as State
-%% Returns: {noreply, SState}.
-%%----------------------------------------------------------------------
-handle_info({tcp, _Socket, "load " ++ String},
-  State=#sstate{socket=Socket}) ->
-  MapString = hd(string:tokens(String, "\r\n")),
-  Map = world_helper:ascii_to_map(MapString),
-  
-  call_world(Socket, {load, Map}),
-  world_helper:log(info, "Ctl: Socket ~w received load ~s",
-    [Socket, [MapString]]),
   
   {noreply, State};
 

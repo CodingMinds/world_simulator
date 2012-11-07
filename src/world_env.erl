@@ -17,7 +17,7 @@
 %%%   Interface for the behaviour gen_server.
 %%%   Initialice a new world with the map Map and the options Options
 %%%   (see records.hrl).
-%%% handle_call({load, Map}, From, World)
+%%% handle_call({map, Map}, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Replace the actual running map with the new one (see records.hrl).
 %%% handle_call({options, Options}, From, World)
@@ -94,7 +94,7 @@ init([Map, Options]) when is_list(Map), is_record(Options, options) ->
 %%   world_records.hrl).
 %% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
-handle_call({load, Map}, _From, World=#world{agents=Agents})
+handle_call({map, Map}, _From, World=#world{agents=Agents})
   when is_list(Map) ->
   lists:foreach(fun({Pid, _Coordinates}) ->
       gen_server:cast(Pid, world_destroyed)

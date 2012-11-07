@@ -97,7 +97,7 @@ The system is initialized with a small 5x5 example world which shows all
 possible objects.
 
 To load your own world connect to the control port (see Example usage) and use
-the command 'load'. Encode the map with the ASCII symbols described in the
+the command 'map'. Encode the map with the ASCII symbols described in the
 section Description; to mark the beginning of a new row use the character |.
 For example the default world (except the hard coded and not responding demo
 agent) could be encoded with the following string:
@@ -194,7 +194,7 @@ map
 100 OO.OO
 100 ...OF
 100 *....
-load F...O|....|..........F
+map F...O|....|..........F
 201 success
 map
 100 F...OOOOOOO
@@ -256,8 +256,7 @@ ctrl port to get the whole environment.
 
 #### Admin
 
-map  
-load ASCII_REPRESENTATION  
+map [ASCII_REPRESENTATION]  
 options [OPTIONS ..]
 kill all (not yet implemented)  
 shutdown (not yet implemented)
