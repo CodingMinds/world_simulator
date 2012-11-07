@@ -29,8 +29,8 @@
 -include("world_records.hrl").
 
 %%----------------------------------------------------------------------
-%% Function: start/0
-%% Purpose: Wraper for start_link of gen_server
+%% Function: start_link/0
+%% Purpose: Wrapper for start_link of gen_server
 %% Args: -
 %% Returns: 
 %%----------------------------------------------------------------------

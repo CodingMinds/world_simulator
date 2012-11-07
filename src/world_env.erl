@@ -52,7 +52,7 @@
 -include("world_records.hrl").
 
 %%----------------------------------------------------------------------
-%% Function: start/1
+%% Function: start_link/1
 %% Purpose: Calls gen_server:start_link/4 with map Map.
 %% Args: The map Map which represents the modeled virtual world  (see
 %%   world_records.hrl).

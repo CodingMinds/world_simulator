@@ -56,7 +56,7 @@ init([]) ->
   {ok, {{simple_one_for_one, 60, 3600},
        [{ctl_socket,
         {world_ctl_sserv, start_link, [ListenSocket]},
-        temporary, 400, worker, [world_ctl_sserv]}
+        temporary, 300, worker, [world_ctl_sserv]}
        ]}}.
 
 %%----------------------------------------------------------------------

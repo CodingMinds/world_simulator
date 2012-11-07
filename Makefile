@@ -1,5 +1,6 @@
 # target: all   	- Default target. Compiles .erl files
 all:
+	mkdir -p log
 	erl -make
 
 # target: clean 	- Remove compilation results

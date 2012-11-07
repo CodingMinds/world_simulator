@@ -70,7 +70,7 @@
 
 %%----------------------------------------------------------------------
 %% Function: start/1
-%% Purpose: Wraper for start_link of gen_server
+%% Purpose: Wrapper for start_link of gen_server
 %% Args: Socket
 %% Returns: 
 %%----------------------------------------------------------------------

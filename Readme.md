@@ -57,17 +57,23 @@ implementations.
 <pre>
 world (application)
  '-> world_sup (supervisor)
-      |-> world_logging (gen_server)
-      |-> world_env (gen_server)
-      |-> world_ctl_sservsup (supervisor)
-      |    '-> world_ctl_sserv (gen_server)
-      '-> world_sservsup (supervisor)
-           '-> world_sserv (gen_server)
+      |-> world_ofo_sup (supervisor)
+      |    |-> world_logging (gen_server)
+      |    |-> world_ctl_sservsup (supervisor)
+      |    |    '-> world_ctl_sserv (gen_server)
+      |    |-> world_sservsup (supervisor)
+      |    |    '-> world_sserv (gen_server)
+      |    '-> world_http
+      '-> world_env (gen_server)
 </pre>
 
 #### world_sup.erl
 The global supervisor which initialize the whole application. First the
-simulated world and then the supervisor of the socket server.
+one_for_one supervisor and then the simulated world.
+
+#### world_ofo_sup.erl
+A supervisor with one_for_one restart strategy which monitors all supervisor
+ans worker which can be restarted without big trouble or dependencies.
 
 #### world_env.erl
 The gen_server which represents the virtual world and holds all the logic.
@@ -81,6 +87,11 @@ Listens on the port which is defined in world.app as 'port' (default 4567)
 The socket server which handle incoming control connections and forward them
 to the simulated world world_env.erl  
 Listens on the port which is defined in world.app as 'ctl_port' (default 4568)
+
+#### world_http.erl
+A simple http server based on the build in httpd. Servers a static page with
+a project description, a read only overview of the environment and some contact
+informations. The environment overview is based on js and refresh every second.
 
 #### world_logging.erl
 A simple logging server which writes the messages from client and environment
@@ -276,6 +287,7 @@ quit
  * Erlang documentation
  * http://learnyousomeerlang.com/ for supervisor based socket server
  * http://www.uffmm.org/ for theoretical stuff and specifications
+ * Twitter Bootstrap
 
 ## Licence
 
