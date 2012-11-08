@@ -291,4 +291,5 @@ quit
 
 ## Licence
 
-[GNU General Public License v3](http://www.gnu.org/licenses/gpl.html)
+ * Source code [GNU General Public License v3](http://www.gnu.org/licenses/gpl.html)
+ * Documentation [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/)
