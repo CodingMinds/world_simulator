@@ -15,10 +15,11 @@ with the following ASCII symbols:
 
 The socket connection use a plain text protocol, which is defined on the
 end of this Reamde file. The movement and position values are based on the
-following table (also from Wilsons WOOD1):
+following table where 0 is the actual position if the agent (also from
+Wilsons WOOD1):
 
 8 | 1 | 2  
-7 | * | 3  
+7 | 0 | 3  
 6 | 5 | 4
 
 Also compare with the corresponding script http://www.uffmm.org/EoIESS-TH/gclt/node14.html  
@@ -50,8 +51,7 @@ implementations.
 
 #### Client demos
 
-  * Handle grid size in welcome greeting
-  * Handle food and other protocol stuff
+  * Improve demo clients and build more
 
 ## Logical Structure
 <pre>
@@ -291,5 +291,5 @@ quit
 
 ## Licence
 
- * Source code [GNU General Public License v3](http://www.gnu.org/licenses/gpl.html)
- * Documentation [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/)
+ * Source code: [GNU General Public License v3](http://www.gnu.org/licenses/gpl.html)
+ * Documentation: [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/)
