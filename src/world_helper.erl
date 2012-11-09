@@ -153,7 +153,7 @@ free_sector(Map) ->
 %% Returns: The modified world.
 %%----------------------------------------------------------------------
 consume_food({X, Y}, World=#world{map=Map, options=Options,
-  agents=Agents}) ->
+  agents=_Agents}) ->
   {Coordinates, Sector} = world_helper:get_sector(X, Y, Map),
   case Options#options.respawn_food of
     true ->
@@ -185,9 +185,10 @@ consume_food({X, Y}, World=#world{map=Map, options=Options,
                 [Coordinates, Coordinates2]),
               
               % send broadcast to all clients
-              lists:foreach(fun({Pid, _Coordinates}) ->
-                gen_server:cast(Pid, world_changed)
-              end, Agents),
+              % deactivated because it's deprecated
+              %lists:foreach(fun({Pid, _Coordinates}) ->
+              %  gen_server:cast(Pid, world_changed)
+              %end, Agents),
               
               World#world{map=Map3}
           end
