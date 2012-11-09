@@ -276,7 +276,7 @@ quit
 
 #### Client
 
-move [1-8]  
+move [0-8]  
 environ  
 help [COMMAND]
 

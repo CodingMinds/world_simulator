@@ -288,6 +288,10 @@ handle_call({do, Action}, {Pid, _Tag},
         {move, Direction} ->
           CurrentSector = world_helper:get_sector(X, Y, Map),
           case Direction of
+            0 ->
+              world_helper:log(client, "Client ~w hasn't moved",
+                [Pid]),
+              {reply, ok, World};
             1 ->
               CheckAndApply(CurrentSector,
                 world_helper:get_sector(X, Y-1, Map));

@@ -255,12 +255,13 @@ handle_info({tcp, _Socket, "help environ" ++ _},
 handle_info({tcp, _Socket, "help move" ++ _},
   State=#sstate{socket=Socket}) ->
   world_helper:send(Socket,
-    "103 move [1-8] moves the client to position N.~n" ++
-    "103 N must be a value from 1 to 8 and describes the direction " ++
-        "relative to the actual position of the client.~n" ++
+    "103 move [0-8] moves the client to position N.~n" ++
+    "103 N must be a value from 0 to 8 and describes the direction " ++
+        "relative to the actual position of the client. 0 means no " ++
+        "move.~n" ++
     "103 The mapping is based on Wilsons WOOD1 environment~n" ++
     "103    8 | 1 | 2~n" ++
-    "103    7 | # | 3~n" ++
+    "103    7 | 0 | 3~n" ++
     "103    6 | 5 | 4"
   ),
   
@@ -277,7 +278,7 @@ handle_info({tcp, _Socket, "help" ++ _},
   world_helper:send(Socket,
     "103 The most commonly used commands are:~n" ++
     "103    help COMMAND    Print detailed help~n" ++
-    "103    move [1-8]      Move the client to position N~n" ++
+    "103    move [0-8]      Move the client to position N~n" ++
     "103    environ         Show the nearest environ~n" ++
     "103    quit            Leave this world"
   ),
