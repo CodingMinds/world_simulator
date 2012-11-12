@@ -1,2 +1,6 @@
 *.beam
 log/*
+doc/edoc-info
+doc/*.css
+doc/*.html
+doc/*.png

@@ -1,8 +1,13 @@
 %%%---------------------------------------------------------------------
 %%% Description module world_ctl_sserv
 %%%---------------------------------------------------------------------
-%%% Ctl SServ is a socket based server which provides the interfaces to
-%%% control the simulated world.
+%%% @author M. Bittorf <info@coding-minds.com>
+%%% @copyright 2012 M. Bittorf
+%%% @doc {@module} is a socket based server which provides the
+%%% interfaces to control the simulated world. The socket server is
+%%% based on the behaviour gen_server and handles tcp sessions which can
+%%% control the environment.
+%%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
 %%% init([])
@@ -58,20 +63,23 @@
 
 %%----------------------------------------------------------------------
 %% Function: start/1
-%% Purpose: Wrapper for start_link of gen_server
+%% Purpose: Wrapper for start_link of gen_server.
 %% Args: Socket
 %% Returns: 
 %%----------------------------------------------------------------------
+%% @doc Wrapper for start_link of gen_server.
 start_link(Socket) ->
   gen_server:start_link(?MODULE, Socket, []).
 
 %%----------------------------------------------------------------------
 %% Function: init/1
 %% Purpose: Interface for the behaviour gen_server.
-%%   Initialice a new socket server listening on socket Socket.
+%%   Initialize a new socket server listening on socket Socket.
 %% Args: The socket Socket on which we listen.
 %% Returns: {ok, SState}
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Initialize a new socket server listening on socket `Socket'.
 init(Socket) ->
   %% Because accepting a connection is a blocking function call,
   %% we can not do it in here. Forward to the server loop!
@@ -87,6 +95,8 @@ init(Socket) ->
 %% Args: -
 %% Returns: {noreply, SState} | {stop, {error, Reason}, SState}
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Used to initialize listening for incoming connections on our socket
 handle_cast(accept, State = #sstate{socket=LSocket}) ->
   %% handle new connection
   Accept = gen_tcp:accept(LSocket),
@@ -111,10 +121,12 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle tcp 'quit' message. Terminate.
+%% Purpose: Handle tcp 'quit' message. Terminates the instance.
 %% Args: Socket package as tuple and server state as State
 %% Returns: {stop, normal, SState}.
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Used to handle incoming tcp messages.
 handle_info({tcp, _Socket, "quit" ++ _},
   State=#sstate{socket=Socket}) ->
   world_helper:log(info, "Ctl: Socket ~w received quit", [Socket]),
@@ -215,7 +227,8 @@ handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle information about closed socket. Terminate.
+%% Purpose: Handle information about closed socket. Terminate the
+%%   instance.
 %% Args: Socket state as tuple and server state as State
 %% Returns: {stop normal, SState}.
 %%----------------------------------------------------------------------
@@ -227,7 +240,8 @@ handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle information abut socket error. Terminate.
+%% Purpose: Handle information abut socket error. Terminate the
+%%   instance.
 %% Args: Socket state as tuple and server state as State
 %% Returns: {stop, normal, SState}.
 %%----------------------------------------------------------------------
@@ -250,11 +264,18 @@ handle_info(E, S) ->
 
 %%----------------------------------------------------------------------
 %% Function: *
-%% Purpose: Dummy functions for the behaviour gen_server
+%% Purpose: Dummy functions for the behaviour gen_server. Not used in this
+%% implementation
 %%----------------------------------------------------------------------
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 handle_call(_Action, _From, State) ->{noreply, State}.
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 terminate(normal, _State) -> ok;
 terminate(_Reason, _State) -> ok.
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 code_change(_OldVersion, State, _Extra) -> {ok, State}.
 
 %%----------------------------------------------------------------------
@@ -264,6 +285,8 @@ code_change(_OldVersion, State, _Extra) -> {ok, State}.
 %%   Command.
 %% Returns: ok | {error, Reason}.
 %%----------------------------------------------------------------------
+%% @doc Process command `Command' and send reply on socket `Socket'.
+%% @private
 call_world(Socket, Command) ->
   case gen_server:call(world_env, Command) of
     ok ->
@@ -290,6 +313,8 @@ call_world(Socket, Command) ->
 %% Args: Active socket Socket
 %% Returns: ok
 %%----------------------------------------------------------------------
+%% @doc Terminate connection and remove mapping from world
+%% @private
 close_connection(Socket) ->
   world_helper:send(Socket, "200 good bye"),
   gen_tcp:close(Socket),

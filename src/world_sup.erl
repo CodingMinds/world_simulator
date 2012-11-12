@@ -1,8 +1,11 @@
 %%%---------------------------------------------------------------------
 %%% Description module world_sup
 %%%---------------------------------------------------------------------
-%%% The global supervisor which builds the supervision tree of the
-%%% application world.
+%%% @author M. Bittorf <info@coding-minds.com>
+%%% @copyright 2012 M. Bittorf
+%%% @doc The global supervisor {@module} which builds the supervision
+%%% tree of the application world.
+%%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
 %%% start_link()
@@ -29,6 +32,7 @@
 %% Args: -
 %% Returns: {ok, Pid} | ignore | {error, Reason}
 %%----------------------------------------------------------------------
+%% @doc Wrapper for start_link of supervisor.
 start_link() ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
@@ -39,6 +43,8 @@ start_link() ->
 %% Args: -
 %% Returns: child_spec()
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour supervisor.
+%%   Returns the child specification for the supervisor.
 init([]) ->
   MaxRestart = 6,
   MaxTime = 3000,

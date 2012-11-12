@@ -1,8 +1,11 @@
 %%%---------------------------------------------------------------------
 %%% Description module world_http
 %%%---------------------------------------------------------------------
-%%% Http uses the erlang intes http implementation to provide a read
-%%% only interface to the environment.
+%%% @author M. Bittorf <info@coding-minds.com>
+%%% @copyright 2012 M. Bittorf
+%%% @doc {@module} uses the erlang inets http implementation to provide
+%%% a read only interface to the environment.
+%%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
 %%% start_link()
@@ -23,11 +26,13 @@
 
 %%----------------------------------------------------------------------
 %% Function: start_link/0
-%% Purpose: Interface for the calling behaviour supervisor.
-%%  Starts inets http daemon.
+%% Purpose: Interface for the calling behaviour supervisor. Starts inets
+%%   http daemon.
 %% Args: -
 %% Returns: {ok, Pid}
 %%----------------------------------------------------------------------
+%% @doc Interface for the calling behaviour supervisor. Starts inets
+%%   http daemon.
 start_link() ->
   {ok, HttpPort} = application:get_env(http_port),
   {ok, Log} = application:get_env(log_http),
@@ -66,6 +71,7 @@ start_link() ->
 %% Args: SessionId, Environment and Input from httpd
 %% Returns: mod_esi:deliver return value.
 %%----------------------------------------------------------------------
+%% @doc Interface for mod_esi to server an ASCII map.
 map(SessionID, _Env, _Input) ->
   Content = case gen_server:call(world_env, map) of
     {map, Map} ->
@@ -86,6 +92,7 @@ map(SessionID, _Env, _Input) ->
 %% Args: SessionId, Environment and Input from httpd
 %% Returns: mod_esi:deliver return value.
 %%----------------------------------------------------------------------
+%% @doc Interface for mod_esi to serve ASCII options.
 options(SessionID, _Env, _Input) ->
   Content = case gen_server:call(world_env, options) of
     {options, Options} ->

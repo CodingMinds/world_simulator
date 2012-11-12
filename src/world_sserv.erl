@@ -1,8 +1,13 @@
 %%%---------------------------------------------------------------------
 %%% Description module world_sserv
 %%%---------------------------------------------------------------------
-%%% SServ is a socket based server which provides the user interface for
-%%% the simulated world.
+%%% @author M. Bittorf <info@coding-minds.com>
+%%% @copyright 2012 M. Bittorf
+%%% @doc {@module} is a socket based server which provides the user
+%%% interface for the simulated world. The socket server is based on
+%%% the behaviour gen_server and handles tcp sessions which interpreted
+%%% as a new client/agent.
+%%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
 %%% init([])
@@ -74,16 +79,19 @@
 %% Args: Socket
 %% Returns: 
 %%----------------------------------------------------------------------
+%% @doc Wrapper for start_link of gen_server.
 start_link(Socket) ->
   gen_server:start_link(?MODULE, Socket, []).
 
 %%----------------------------------------------------------------------
 %% Function: init/1
 %% Purpose: Interface for the behaviour gen_server.
-%%   Initialice a new socket server listening on socket Socket.
+%%   Initialize a new socket server listening on socket Socket.
 %% Args: The socket Socket on which we listen.
 %% Returns: {ok, SState}
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Initialize a new socket server listening on socket `Socket'.
 init(Socket) ->
   %% Because accepting a connection is a blocking function call,
   %% we can not do it in here. Forward to the server loop!
@@ -99,6 +107,9 @@ init(Socket) ->
 %% Args: -
 %% Returns: {noreply, SState} | {stop, {error, Reason}, SState}
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Used to initialize listening for incoming connections on our
+%%   socket or handle global changes / announcements.
 handle_cast(accept, State = #sstate{socket=LSocket}) ->
   %% handle new connection
   Accept = gen_tcp:accept(LSocket),
@@ -168,6 +179,8 @@ handle_cast(world_destroyed, SState = #sstate{socket=Socket}) ->
 %% Args: Socket package as tuple and server state as State
 %% Returns: {stop, normal, SState}.
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Used to handle incoming tcp messages.
 handle_info({tcp, _Socket, "quit" ++ _},
   State=#sstate{socket=Socket}) ->
   world_helper:log(info, "Socket ~w received quit", [Socket]),
@@ -348,9 +361,15 @@ handle_info(E, S) ->
 %% Function: *
 %% Purpose: Dummy functions for the behaviour gen_server
 %%----------------------------------------------------------------------
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 handle_call(_Action, _From, State) ->{noreply, State}.
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 terminate(normal, _State) -> ok;
 terminate(_Reason, _State) -> ok.
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 code_change(_OldVersion, State, _Extra) -> {ok, State}.
 
 %%----------------------------------------------------------------------
@@ -360,6 +379,8 @@ code_change(_OldVersion, State, _Extra) -> {ok, State}.
 %%   Command.
 %% Returns: ok | {error, Reason}.
 %%----------------------------------------------------------------------
+%% @doc Process command `Command' and send reply on socket `Socket'.
+%% @private
 call_world(Socket, Command) ->
   case gen_server:call(world_env, {do, Command}) of
     ok ->
@@ -390,6 +411,8 @@ call_world(Socket, Command) ->
 %% Args: Active socket Socket
 %% Returns: ok
 %%----------------------------------------------------------------------
+%% @doc Terminate connection and remove mapping from world
+%% @private
 close_connection(Socket) ->
   world_helper:send(Socket, "200 good bye"),
   gen_tcp:close(Socket),

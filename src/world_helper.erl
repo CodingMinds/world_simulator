@@ -1,8 +1,11 @@
 %%%---------------------------------------------------------------------
 %%% Description module world_helper
 %%%---------------------------------------------------------------------
-%%% World helper holds some functions which are used by more then one
-%%% module.
+%%% @author M. Bittorf <info@coding-minds.com>
+%%% @copyright 2012 M. Bittorf
+%%% @doc {@module} holds some functions which are used by more then one
+%%% module of application world.
+%%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
 %%% ascii_to_map(MapString)
@@ -50,10 +53,11 @@
 
 %%----------------------------------------------------------------------
 %% Function: ascii_to_map/1
-%% Purpose: Translate a string in a new map.
+%% Purpose: Translate a string to a new map data structure.
 %% Args: An ASCII string which represents the new map.
 %% Returns: ok | {error, Reason}
 %%----------------------------------------------------------------------
+%% @doc Translate a string to a new map data structure.
 ascii_to_map(MapString) ->
   %% Split into rows
   Tokens = string:tokens(MapString, "|"),
@@ -99,6 +103,7 @@ ascii_to_map(MapString) ->
 %% Args: The map Map.
 %% Returns: [AsciiRow, ..]
 %%----------------------------------------------------------------------
+%% @doc Translate a map into as ASCII representation per row.
 map_to_ascii(Map) ->
   %% Get max size of map
   {X, Y} = world_helper:map_size(Map),
@@ -120,6 +125,7 @@ map_to_ascii(Map) ->
 %% Args: map Map.
 %% Returns: {X, Y}
 %%----------------------------------------------------------------------
+%% @doc Extract the highest X and Y positions of the given map.
 map_size(Map) ->
   Coordinates = lists:map(fun({{X, Y}, _}) -> {X, Y} end, Map),
   lists:nth(1,
@@ -134,6 +140,7 @@ map_size(Map) ->
 %% Args: Map as map which should be used.
 %% Returns: {{X, Y}, #sector} | false.
 %%----------------------------------------------------------------------
+%% @doc Return the coordinates of the next free sector or false.
 free_sector(Map) ->
   FreeSectors = lists:filter(fun({_, #sector{staffed=Staffed}}) ->
                              Staffed == false end, Map),
@@ -147,11 +154,13 @@ free_sector(Map) ->
 
 %%----------------------------------------------------------------------
 %% Function: consume_food/2
-%% Purpose: Will be triggered if some food is consumed and applies
-%%   the food options to the map.
+%% Purpose: Will be triggered if some food is consumed and applies the
+%%   food options to the map.
 %% Args: {X, Y} coordinates of food, World as world.
 %% Returns: The modified world.
 %%----------------------------------------------------------------------
+%% @doc Will be triggered if some food is consumed and applies the food
+%%   options to the map.
 consume_food({X, Y}, World=#world{map=Map, options=Options,
   agents=_Agents}) ->
   {Coordinates, Sector} = world_helper:get_sector(X, Y, Map),
@@ -206,6 +215,8 @@ consume_food({X, Y}, World=#world{map=Map, options=Options,
 %% Args: Sector.
 %% Returns: . | O  | F | *
 %%----------------------------------------------------------------------
+%% @doc Return character which represents the world of the given sector.
+%%   Based on Wilson's WOOD1.
 ascii_rep({_Coordinates, Sector}) ->
   if
     Sector#sector.blocked == true ->
@@ -225,6 +236,8 @@ ascii_rep({_Coordinates, Sector}) ->
 %% Args: X and Y as coordinates on map Map.
 %% Returns: {{X, Y}, #sector}
 %%----------------------------------------------------------------------
+%% @doc Get the sector on position X and Y of map `Map'. Return a
+%%   blocked one if there is no sector on this position.
 get_sector(X, Y, Map) ->
   case lists:filter(fun({{Xm, Ym}, _}) ->
                     (X==Xm) and (Y==Ym) end, Map) of
@@ -236,10 +249,11 @@ get_sector(X, Y, Map) ->
 
 %%----------------------------------------------------------------------
 %% Function: ascii_to_options/1
-%% Purpose: Translate a string in a new options record.
+%% Purpose: Translate a string to a new options record.
 %% Args: An ASCII string which represents the new options.
 %% Returns: {ok, #options} | {error, Reason}
 %%----------------------------------------------------------------------
+%% @doc Translate a string to a new options record.
 ascii_to_options(OptionsString) ->
   Result = (catch case string:tokens(OptionsString, " ") of
     [MaxAgents, RespawnFood, StaticFood] ->
@@ -281,6 +295,7 @@ ascii_to_options(OptionsString) ->
 %% Args: The option Option.
 %% Returns: String.
 %%----------------------------------------------------------------------
+%% @doc Translate a option record into a list of ASCII representations.
 options_to_ascii(Options) when is_record(Options, options) ->
   [
   "max agents: " ++ integer_to_list(Options#options.max_agents),
@@ -294,6 +309,7 @@ options_to_ascii(Options) when is_record(Options, options) ->
 %% Args: Active socket Socket and message Str
 %% Returns: ok
 %%----------------------------------------------------------------------
+%% @doc Send message `Str' to socket `Socket'.
 send(Socket, Str) ->
   send(Socket, Str, []).
 
@@ -304,6 +320,8 @@ send(Socket, Str) ->
 %% Args: Active socket Socket, format arguments Args and message Str
 %% Returns: ok
 %%----------------------------------------------------------------------
+%% @doc Format message `Str' with arguments `Args' and send it to socket
+%%   `Socket'.
 send(Socket, Str, Args) ->
   gen_tcp:send(Socket, io_lib:format(Str ++ "~n", Args)),
   inet:setopts(Socket, [{active, once}]),
@@ -315,6 +333,7 @@ send(Socket, Str, Args) ->
 %% Args: Message Str and target Target.
 %% Returns: ok
 %%----------------------------------------------------------------------
+%% @doc Send message `Str' with target `Target' to logging server.
 log(Target, Str) ->
   log(Target, Str, []).
 
@@ -325,6 +344,8 @@ log(Target, Str) ->
 %% Args: Message Str, format arguments Arg and target Target.
 %% Returns: ok
 %%----------------------------------------------------------------------
+%% @doc Format message `Str' with arguments `Args' and send it with
+%%   target `Target' to logging server.
 log(Target, Str, Args) ->
   gen_server:cast(world_logging, {log, Target,
     io_lib:format(Str ++ "~n", Args)}).

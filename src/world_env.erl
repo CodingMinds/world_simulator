@@ -1,9 +1,12 @@
 %%%---------------------------------------------------------------------
 %%% Description module world_env
 %%%---------------------------------------------------------------------
-%%% World_env holds the environment and the logic to interact with the
-%%% modeled virtual world. This module uses the behaviour gen_server to
-%%% provide the functionality and interfaces.
+%%% @author M. Bittorf <info@coding-minds.com>
+%%% @copyright 2012 M. Bittorf
+%%% @doc {@module} holds the environment and the logic to interact with
+%%% the modeled virtual world. This module uses the behaviour gen_server
+%%% to provide the functionality and interfaces.
+%%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
 %%% start_link(Map)
@@ -58,17 +61,21 @@
 %%   world_records.hrl).
 %% Returns: {ok,Pid} | ignore | {error,Error}
 %%----------------------------------------------------------------------
+%% @doc Wrapper for start_link of gen_server.
 start_link(Map) ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [Map], []).
 
 %%----------------------------------------------------------------------
 %% Function: init/1
 %% Purpose: Interface for the behaviour gen_server.
-%%   Initialice a new world with map Map.
+%%   Initialize a new world with map Map.
 %% Args: The map Map which represents the modeled virtual world and
 %%   optional with the options record (see world_records.hrl).
 %% Returns: {ok, World} with World as initial world
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Initialize a new world with map `Map' and an optional options
+%%   record `Options'.
 init([Map]) when is_list(Map) ->
   World = #world{map = Map},
   AsciiRows = world_helper:map_to_ascii(Map),
@@ -94,6 +101,8 @@ init([Map, Options]) when is_list(Map), is_record(Options, options) ->
 %%   world_records.hrl).
 %% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Handle incoming interactions with the world.
 handle_call({map, Map}, _From, World=#world{agents=Agents})
   when is_list(Map) ->
   lists:foreach(fun({Pid, _Coordinates}) ->
@@ -347,10 +356,12 @@ handle_call({do, Action}, {Pid, _Tag},
 
 %%----------------------------------------------------------------------
 %% Function: handle_cast/2
-%% Purpose: Stops the scheduler
+%% Purpose: Stops the environment.
 %% Args: -
 %% Returns: {stop, normal, World}.
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Only used to stop the environment
 handle_cast(stop, World) ->
   {stop, normal, World}.
   
@@ -358,7 +369,13 @@ handle_cast(stop, World) ->
 %% Function: *
 %% Purpose: Dummy functions for the behaviour gen_server
 %%----------------------------------------------------------------------
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 terminate(normal, _World) -> ok;
 terminate(_Reason, _World) -> ok.
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 handle_info(_Message, World) -> {noreply, World}.
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 code_change(_OldVersion, World, _Extra) -> {ok, World}.

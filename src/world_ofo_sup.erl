@@ -1,8 +1,12 @@
 %%%---------------------------------------------------------------------
 %%% Description module world_ofo_sup
 %%%---------------------------------------------------------------------
-%%% The one for one supervisor which monitors all supervisors and
-%%% workers that can restarted without big trouble or dependencies.
+%%% @author M. Bittorf <info@coding-minds.com>
+%%% @copyright 2012 M. Bittorf
+%%% @doc The one for one supervisor {@module} which monitors all
+%%% supervisors and workers that can restarted without big trouble or
+%%% dependencies.
+%%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
 %%% start_link()
@@ -29,6 +33,7 @@
 %% Args: -
 %% Returns: {ok, Pid} | ignore | {error, Reason}
 %%----------------------------------------------------------------------
+%% @doc Wrapper for start_link of supervisor.
 start_link() ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
@@ -39,6 +44,8 @@ start_link() ->
 %% Args: -
 %% Returns: child_spec()
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour supervisor.
+%%   Returns the child specification for the supervisor.
 init([]) ->
   MaxRestart = 6,
   MaxTime = 3000,

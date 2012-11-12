@@ -1,8 +1,11 @@
 %%%---------------------------------------------------------------------
 %%% Description module world_logging
 %%%---------------------------------------------------------------------
-%%% Logging get log messages as casts from the different modules, sort
-%%% them and write it down.
+%%% @author M. Bittorf <info@coding-minds.com>
+%%% @copyright 2012 M. Bittorf
+%%% @doc {@module} get log messages as casts from the different modules,
+%%% sort them and write it down.
+%%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
 %%% init([])
@@ -34,6 +37,7 @@
 %% Args: -
 %% Returns: 
 %%----------------------------------------------------------------------
+%% @doc Wrapper for start_link of gen_server.
 start_link() ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -43,6 +47,7 @@ start_link() ->
 %% Args: Argument is ignored
 %% Returns: {ok, {ClientLog, EnvLog}}
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
 init(_Argument) ->
   {ok, ClientLog} = application:get_env(log_client),
   {ok, EnvLog} = application:get_env(log_env),
@@ -57,6 +62,8 @@ init(_Argument) ->
 %% Args: -
 %% Returns: {noreply, State}
 %%----------------------------------------------------------------------
+%% @doc Interface for the behaviour gen_server.
+%%   Handles incoming log messages.
 handle_cast({log, client, Msg}, State = {ClientLog, _Env, _Info}) ->
   ok = log(ClientLog, Msg),
   {noreply, State};
@@ -96,19 +103,28 @@ handle_cast(_Event, State) ->
 %% Function: *
 %% Purpose: Dummy functions for the behaviour gen_server
 %%----------------------------------------------------------------------
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 handle_call(_Action, _From, State) ->{noreply, State}.
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 handle_info(_Message, State) -> {noreply, State}.
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 terminate(normal, _State) -> ok;
 terminate(_Reason, _State) -> ok.
+%% @doc Dummy function for the behaviour gen_server. Not used in this
+%% implementation
 code_change(_OldVersion, State, _Extra) -> {ok, State}.
 
 %%----------------------------------------------------------------------
 %% Function: log/2
-%% Purpose: Write message Msg with timestamp to for Target configured
-%%   file.
+%% Purpose: Write message Msg with timestamp to file Target.
 %% Args: Target, Msg
 %% Returns: ok | {error, Reason}
 %%----------------------------------------------------------------------
+%% @doc Write message `Msg' with timestamp to file `Target'.
+%% @private
 log(Target, Msg) ->
   {Y, Mo, D} = date(),
   {H, Mi, S} = time(),
