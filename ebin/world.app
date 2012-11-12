@@ -18,6 +18,6 @@
      {log_http, "../log/http_transfer.log"},
      {log_http_error, "../log/http_error.log"}
     ]},
-   %{applications, []},
+   {applications, [stdlib, kernel]},
    {mod, {world, []}}
   ]}.
