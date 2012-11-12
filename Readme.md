@@ -3,10 +3,11 @@ World Simulator (Erlang)
 
 ## Description
 
-A simple world which is based on the style of the WOOD1 environment described
-from Wilson in "ZCS: A Zeroth Level Classifier System" (1994).
-Agents can connect with TCP sockets and explore it. Objects are encoded
-with the following ASCII symbols:
+A system which provides some simple worlds which are based on the style
+of the WOOD1 environment described from Wilson in "ZCS: A Zeroth Level
+Classifier System" (1994). Agents can connect with TCP sockets to these
+worlds and explore them. Objects are encode with the following ASCII
+symbols:
 
  * . - Free space
  * * - An Agent
@@ -47,11 +48,11 @@ implementations.
 
 #### Server
 
- * Prepare some worlds and make them loadable via admin interface
- * Implement more options (like amount of food and energy, costs, etc)
+ * Implement handling of multiple worlds/environments
 
 #### Client demos
 
+  * Implement handling of multiple worlds/environments
   * Improve demo clients and build more
 
 ## Logical Structure
@@ -70,29 +71,30 @@ world (application)
 
 #### world_sup.erl
 The global supervisor which initialize the whole application. First the
-one_for_one supervisor and then the simulated world.
+one_for_one supervisor and then the simulated worlds.
 
 #### world_ofo_sup.erl
 A supervisor with one_for_one restart strategy which monitors all supervisor
 ans worker which can be restarted without big trouble or dependencies.
 
 #### world_env.erl
-The gen_server which represents the virtual world and holds all the logic.
+The gen_server which represents a virtual world and holds all the logic.
 
 #### world_sservsup.erl and world_sserv.erl
 The socket server which handle incoming connections and forward them to the
-simulated world world_env.erl  
+simulated world instance of world_env.erl  
 Listens on the port which is defined in world.app as 'port' (default 4567)
 
 #### world_ctl_sservsup.erl and world_ctl_sserv.erl
 The socket server which handle incoming control connections and forward them
-to the simulated world world_env.erl  
+to the simulated world instance of world_env.erl. Also creates and destroys
+worlds  
 Listens on the port which is defined in world.app as 'ctl_port' (default 4568)
 
 #### world_http.erl
 A simple http server based on the build in httpd. Servers a static page with
-a project description, a read only overview of the environment and some contact
-informations. The environment overview is based on js and refresh every second.
+a project description, a read only overview of the environments and some contact
+informations. The environment overview is based on js and refreshs every second.
 
 #### world_logging.erl
 A simple logging server which writes the messages from client and environment
@@ -109,8 +111,9 @@ The system is initialized with a small 5x5 example world which shows all
 possible objects.
 
 To load your own world connect to the control port (see Example usage) and use
-the command 'map'. Encode the map with the ASCII symbols described in the
-section Description; to mark the beginning of a new row use the character |.
+the command 'map' or 'world'. Encode the map with the ASCII symbols described
+in the section Description; to mark the beginning of a new row use the
+character |.
 For example the default world (except the hard coded and not responding demo
 agent) could be encoded with the following string:
 
@@ -268,8 +271,12 @@ ctrl port to get the whole environment.
 
 #### Admin
 
+worlds  
+world ID
+
 map [ASCII_REPRESENTATION]  
 options [OPTIONS ..]  
+destroy  
 kill all (not yet implemented)  
 shutdown (not yet implemented)
 
@@ -277,6 +284,8 @@ quit
 
 #### Client
 
+worlds  
+world ID  
 move [0-8]  
 environ  
 help [COMMAND]
