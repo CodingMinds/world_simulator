@@ -40,7 +40,8 @@ implementations.
 #### Demos
 
  * Min. Scilab 5.4.0 with SOCKET library (2.0.1-1) OR
- * Min. Python 2.7
+ * Min. Python 2.7 OR
+ * Min. Common Lisp 2.49 with usocket (0.5.5)
 
 ## Next steps
 
