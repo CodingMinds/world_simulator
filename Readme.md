@@ -248,12 +248,17 @@ ctrl port to get the whole environment.
 100 ASCII map representation  
 101 world changed (deprecated)  
 102 environ [.|O|F|*]{8}  
-103 free text help replys  
-104 option listings
+103 free text help replies  
+104 option listings  
+105 ID, Name, X, Y, Agents, possible Agents  
+105 ID X Y Agents MaxAgents  
+106 world ID spawned
+107 world ID loaded
 
+200 Speak, friend, and ente(r)  
 200 welcome in this [1-9]+x[1-9]+ world  
 200 good bye  
-201 success  
+201 [.|O|F|*]{8}  
 202 food [0-9]+  
 203 blocked  
 204 staffed  
@@ -264,15 +269,16 @@ ctrl port to get the whole environment.
 
 400 unknown command  
 403 access denied  
-404 not found (not yet implemented)
+404 not found
 
 500 sever made a boo boo  
 501 world destroyed
 
 #### Admin
 
-worlds  
-world ID
+world list  
+world new [ASCII_REPRESENTATION]  
+world load ID
 
 map [ASCII_REPRESENTATION]  
 options [OPTIONS ..]  
@@ -284,8 +290,8 @@ quit
 
 #### Client
 
-worlds  
-world ID  
+world list  
+world load ID  
 move [0-8]  
 environ  
 help [COMMAND]

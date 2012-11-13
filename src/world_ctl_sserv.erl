@@ -18,17 +18,33 @@
 %%% handle_info({tcp, Socket, "quit" ++ _}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'quit' messages.
-%%% handle_info({tcp, Socket, "map " ++ MapString}
+%%% handle_info({tcp, Socket, "world load" ++ String}
 %%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'world load <Pid>' messages.
+%%% handle_info({tcp, Socket, "world new" ++ Map}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'world new Map' messages.
+%%% handle_info({tcp, Socket, "world new" ++ _}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'world new' messages.
+%%% handle_info({tcp, Socket, "world list" ++ _}
+%%%   Interface for the behaviour gen_server.
+%%%   Handle tcp 'world list' messages.
+%%% handle_info({tcp, Socket, "map " ++ MapString}
+%%%   Interface for the behaviour gen_server. Only applicable if an
+%%%   environment is connected.
 %%%   Handle tcp 'map X' messages.
 %%% handle_info({tcp, Socket, "map" ++ _}
-%%%   Interface for the behaviour gen_server.
+%%%   Interface for the behaviour gen_server. Only applicable if an
+%%%   environment is connected.
 %%%   Handle tcp 'map' messages.
 %%% handle_info({tcp, Socket, "options " ++ OptionString}
-%%%   Interface for the behaviour gen_server.
+%%%   Interface for the behaviour gen_server. Only applicable if an
+%%%   environment is connected.
 %%%   Handle tcp 'options ..' messages.
 %%% handle_info({tcp, Socket, "options" ++ _}
-%%%   Interface for the behaviour gen_server.
+%%%   Interface for the behaviour gen_server. Only applicable if an
+%%%   environment is connected.
 %%%   Handle tcp 'options' messages.
 %%% handle_info({tcp, Socket, "\r\n"}
 %%%   Interface for the behaviour gen_server.
@@ -136,16 +152,110 @@ handle_info({tcp, _Socket, "quit" ++ _},
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle tcp 'map MapString' mesages.
+%% Purpose: Handle tcp 'world load <Pid>' messages.
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
-handle_info({tcp, _Socket, "map " ++ String},
+handle_info({tcp, _Socket, "world load " ++ String},
+  State=#sstate{socket=Socket}) ->
+  PidString = hd(string:tokens(String, "\r\n")),
+  
+  world_helper:log(info, "Ctl: Socket ~w received world load ~s",
+    [Socket, PidString]),
+  
+  Pid = list_to_pid(PidString),
+  case is_process_alive(Pid) of
+    false ->
+      world_helper:send(Socket, "404 not found"),
+      {noreply, State};
+    true ->
+      Supervisor = whereis(world_envsup),
+      case process_info(Pid, links) of
+        {links, [Supervisor]} ->
+          world_helper:send(Socket, "107 World ~w loaded", [Pid]),
+          {noreply, State#sstate{environ=Pid}};
+        _ ->
+          world_helper:send(Socket, "404 not found"),
+          {noreply, State}
+      end
+  end;
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'world new Map' messages.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "world new " ++ String},
   State=#sstate{socket=Socket}) ->
   MapString = hd(string:tokens(String, "\r\n")),
   Map = world_helper:ascii_to_map(MapString),
   
-  call_world(Socket, {map, Map}),
+  {ok, Pid} = world_envsup:spawn_world([Map]),
+  
+  world_helper:send(Socket, "106 World ~w spawned", [Pid]),
+  
+  world_helper:log(info, "Ctl: Socket ~w received world new ~s",
+    [Socket, MapString]),
+  
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'world new' messages.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "world new" ++ _},
+  State=#sstate{socket=Socket}) ->
+  
+  {ok, Pid} = world_envsup:spawn_world(),
+  world_helper:send(Socket, "106 World ~w spawned", [Pid]),
+  
+  world_helper:log(info, "Ctl: Socket ~w received world new",
+    [Socket]),
+  
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'world list' messages.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "world list" ++ _},
+  State=#sstate{socket=Socket}) ->
+  
+  Worlds = [{Pid, gen_server:call(Pid, info)} || {_,Pid,_,_}
+    <- supervisor:which_children(world_envsup)],
+  AsciiWorlds = lists:map(
+    fun({Pid, {info, Name, X, Y, Agents, MAgents}}) ->
+      io_lib:format("~w ~s ~B ~B ~B ~B",
+        [Pid, Name, X, Y, Agents, MAgents])
+    end, Worlds),
+  
+  FormatedWorlds = "105 ID, Name, X, Y, Agents, possible Agents~n" ++
+    "105 " ++ string:join(AsciiWorlds, "~n105 "),
+  world_helper:send(Socket, FormatedWorlds),
+  
+  world_helper:log(info, "Ctl: Socket ~w received world",
+    [Socket]),
+  
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'map MapString' messages. Only applicable if an
+%%   environment is connected.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "map " ++ String},
+  State=#sstate{socket=Socket, environ=Env}) when is_pid(Env) ->
+  MapString = hd(string:tokens(String, "\r\n")),
+  Map = world_helper:ascii_to_map(MapString),
+  
+  call_world(Socket, {map, Map}, Env),
   world_helper:log(info, "Ctl: Socket ~w received map ~s",
     [Socket, [MapString]]),
   
@@ -153,32 +263,34 @@ handle_info({tcp, _Socket, "map " ++ String},
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle tcp 'map' message.
+%% Purpose: Handle tcp 'map' message. Only applicable if an environment
+%%   is connected.
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "map" ++ _},
-  State=#sstate{socket=Socket}) ->
-  call_world(Socket, map),
+  State=#sstate{socket=Socket, environ=Env}) when is_pid(Env) ->
+  call_world(Socket, map, Env),
   world_helper:log(info, "Ctl: Socket ~w received map", [Socket]),
   
   {noreply, State};
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle tcp 'options OptionString' mesages.
+%% Purpose: Handle tcp 'options OptionString' mesages. Only applicable
+%%   if an environment is connected.
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
 handle_info({tcp, Socket, "options " ++ String},
-  State=#sstate{socket=Socket}) ->
+  State=#sstate{socket=Socket, environ=Env}) when is_pid(Env) ->
   case catch hd(string:tokens(String, "\r\n")) of
     {'EXIT', _} ->
       world_helper:send(Socket, "300 bad argument");
     OptionsString ->
       case world_helper:ascii_to_options(OptionsString) of
         {ok, Options} ->
-          call_world(Socket, {options, Options});
+          call_world(Socket, {options, Options}, Env);
         {error, _} ->
           world_helper:send(Socket, "300 bad argument")
       end
@@ -190,13 +302,14 @@ handle_info({tcp, Socket, "options " ++ String},
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
-%% Purpose: Handle tcp 'options' message.
+%% Purpose: Handle tcp 'options' message. Only applicable if an
+%%   environment is connected.
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, SState}.
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "options" ++ _},
-  State=#sstate{socket=Socket}) ->
-  call_world(Socket, options),
+  State=#sstate{socket=Socket, environ=Env}) when is_pid(Env) ->
+  call_world(Socket, options, Env),
   world_helper:log(info, "Ctl: Socket ~w received options", [Socket]),
   
   {noreply, State};
@@ -228,12 +341,39 @@ handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
 %% Purpose: Handle information about closed socket. Terminate the
+%%   instance and remove mapping from environment.
+%% Args: Socket state as tuple and server state as State
+%% Returns: {stop normal, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket,
+  environ=Env}) when is_pid(Env) ->
+  gen_server:call(Env, death),
+  world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
+  
+  {stop, normal, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle information about closed socket. Terminate the
 %%   instance.
 %% Args: Socket state as tuple and server state as State
 %% Returns: {stop normal, SState}.
 %%----------------------------------------------------------------------
 handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
-  gen_server:call(world_env, death),
+  world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
+  
+  {stop, normal, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle information abut socket error. Terminate the
+%%   instance and remove mapping from environment.
+%% Args: Socket state as tuple and server state as State
+%% Returns: {stop, normal, SState}.
+%%----------------------------------------------------------------------
+handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket,
+  environ=Env}) when is_pid(Env) ->
+  gen_server:call(Env, death),
   world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
   
   {stop, normal, State};
@@ -246,7 +386,6 @@ handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
 %% Returns: {stop, normal, SState}.
 %%----------------------------------------------------------------------
 handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
-  gen_server:call(world_env, death),
   world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
   
   {stop, normal, State};
@@ -279,16 +418,18 @@ terminate(_Reason, _State) -> ok.
 code_change(_OldVersion, State, _Extra) -> {ok, State}.
 
 %%----------------------------------------------------------------------
-%% Function: call_world/2
-%% Purpose: Process command Command and send reply on socket Socket.
-%% Args: Active connection socket Socket and command for the world
-%%   Command.
+%% Function: call_world/3
+%% Purpose: Process command Command in environment Env and send reply on
+%%   socket Socket.
+%% Args: Active connection socket Socket, command for the world
+%%   Command and Env as environment pid.
 %% Returns: ok | {error, Reason}.
 %%----------------------------------------------------------------------
-%% @doc Process command `Command' and send reply on socket `Socket'.
+%% @doc Process command `Command' in environment `Env' and send reply on
+%%   socket `Socket'.
 %% @private
-call_world(Socket, Command) ->
-  case gen_server:call(world_env, Command) of
+call_world(Socket, Command, Environment) ->
+  case gen_server:call(Environment, Command) of
     ok ->
       world_helper:send(Socket, "201 success");
     {map, Map} ->
@@ -309,11 +450,11 @@ call_world(Socket, Command) ->
 
 %%----------------------------------------------------------------------
 %% Function: close_connection/1
-%% Purpose: Terminate connection and remove mapping from world
-%% Args: Active socket Socket
+%% Purpose: Terminate connection.
+%% Args: Active socket Socket.
 %% Returns: ok
 %%----------------------------------------------------------------------
-%% @doc Terminate connection and remove mapping from world
+%% @doc Terminate connection.
 %% @private
 close_connection(Socket) ->
   world_helper:send(Socket, "200 good bye"),

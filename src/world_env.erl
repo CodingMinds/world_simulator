@@ -9,16 +9,18 @@
 %%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
-%%% start_link(Map)
+%%% start_link(Arguments)
 %%%   Starts the server and register the name ?MODULE.
-%%%   Initialice a new virtual world with the map Map (see
-%%%   world_records.hrl).
+%%%   Initialize a new virtual world with the arguments list Arguments.
+%%% init([])
+%%%   Interface for the behaviour gen_server.
+%%%   Initialize a new world with an empty map.
 %%% init([Map])
 %%%   Interface for the behaviour gen_server.
-%%%   Initialice a new world with the map Map (see records.hrl).
+%%%   Initialize a new world with the map Map (see records.hrl).
 %%% init([Map, Options])
 %%%   Interface for the behaviour gen_server.
-%%%   Initialice a new world with the map Map and the options Options
+%%%   Initialize a new world with the map Map and the options Options
 %%%   (see records.hrl).
 %%% handle_call({map, Map}, From, World)
 %%%   Interface for the behaviour gen_server.
@@ -56,26 +58,30 @@
 
 %%----------------------------------------------------------------------
 %% Function: start_link/1
-%% Purpose: Calls gen_server:start_link/4 with map Map.
-%% Args: The map Map which represents the modeled virtual world  (see
-%%   world_records.hrl).
+%% Purpose: Calls gen_server:start_link/4 with the arguments list
+%%   Arguments.
+%% Args: The arguments Arguments which shall be passed to init/1
 %% Returns: {ok,Pid} | ignore | {error,Error}
 %%----------------------------------------------------------------------
 %% @doc Wrapper for start_link of gen_server.
-start_link(Map) ->
-  gen_server:start_link({local, ?MODULE}, ?MODULE, [Map], []).
+start_link(Arguments) ->
+  gen_server:start_link(?MODULE, Arguments, []).
 
 %%----------------------------------------------------------------------
 %% Function: init/1
 %% Purpose: Interface for the behaviour gen_server.
-%%   Initialize a new world with map Map.
-%% Args: The map Map which represents the modeled virtual world and
-%%   optional with the options record (see world_records.hrl).
+%%   Initialize a new world with map Map if available.
+%% Args: The optional map Map which represents the modeled virtual world
+%%   and the optional options record (see world_records.hrl).
 %% Returns: {ok, World} with World as initial world
 %%----------------------------------------------------------------------
 %% @doc Interface for the behaviour gen_server.
-%%   Initialize a new world with map `Map' and an optional options
-%%   record `Options'.
+%%   Initialize a new world with the optional map `Map' and an optional
+%%   options record `Options'.
+init([]) ->
+  world_helper:log(env, "World started with an empty map"),
+  {ok, #world{}};
+
 init([Map]) when is_list(Map) ->
   World = #world{map = Map},
   AsciiRows = world_helper:map_to_ascii(Map),
@@ -160,10 +166,24 @@ handle_call(options, _From, World=#world{options=Options}) ->
 %% Function: handle_call/3
 %% Purpose: Return the actual internal world of the map.
 %% Args: -
-%% Returns: {reply, ok, #world}.
+%% Returns: {reply, {state, World}, #world}.
 %%----------------------------------------------------------------------
 handle_call(state, _From, World) ->
   {reply, {state, World}, World};
+
+%%----------------------------------------------------------------------
+%% Function: handle_call/3
+%% Purpose: Return a tuple with the name and size of the environment,
+%%   the agent count and the max amount of agents
+%% Args: -
+%% Returns: {reply, {info, Name, X, Y, Agents, MaxAgents}, #world}.
+%%----------------------------------------------------------------------
+handle_call(info, _From, World=#world{map=Map, options=Opt,
+  agents=Agents}) ->
+  {X, Y} = world_helper:map_size(Map),
+  
+  {reply, {info, Opt#options.env_name, X, Y, length(Agents),
+    Opt#options.max_agents}, World};
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3

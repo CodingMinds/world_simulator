@@ -126,6 +126,9 @@ map_to_ascii(Map) ->
 %% Returns: {X, Y}
 %%----------------------------------------------------------------------
 %% @doc Extract the highest X and Y positions of the given map.
+map_size([]) ->
+  {1, 1};
+
 map_size(Map) ->
   Coordinates = lists:map(fun({{X, Y}, _}) -> {X, Y} end, Map),
   lists:nth(1,
@@ -256,21 +259,24 @@ get_sector(X, Y, Map) ->
 %% @doc Translate a string to a new options record.
 ascii_to_options(OptionsString) ->
   Result = (catch case string:tokens(OptionsString, " ") of
-    [MaxAgents, RespawnFood, StaticFood] ->
+    [MaxAgents, RespawnFood, StaticFood, EName, AStartPosition] ->
       MAgents = list_to_integer(MaxAgents),
       RFood = list_to_atom(RespawnFood),
       SFood = list_to_atom(StaticFood),
+      AStartPos = list_to_atom(AStartPosition),
       
       % ugly way to verify that the atoms are true or false
       % and the integer >= 0
       if
         MAgents < 0 ->
           {error, bad_arg};
-        RFood or SFood or true ->
+        RFood or SFood or AStartPos or true ->
           #options{
             max_agents = MAgents,
             respawn_food = RFood,
-            static_food = SFood
+            static_food = SFood,
+            env_name = EName,
+            allow_startposition = AStartPos
           };
         true ->
           {error, bad_arg}
@@ -300,7 +306,11 @@ options_to_ascii(Options) when is_record(Options, options) ->
   [
   "max agents: " ++ integer_to_list(Options#options.max_agents),
   "respawn food: " ++ atom_to_list(Options#options.respawn_food),
-  "static food positions: " ++ atom_to_list(Options#options.static_food)
+  "static food positions: " ++
+    atom_to_list(Options#options.static_food),
+  "environment name: " ++ Options#options.env_name,
+  "allow start position: " ++
+    atom_to_list(Options#options.allow_startposition)
   ].
 
 %%----------------------------------------------------------------------

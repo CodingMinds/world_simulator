@@ -49,42 +49,13 @@ init([]) ->
   MaxRestart = 6,
   MaxTime = 3000,
   
-  %% Add a default map for the world_env startup.
-  Map = [
-    {{1,1}, #sector{}},
-    {{1,2}, #sector{}},
-    {{1,3}, #sector{blocked=true}},
-    {{1,4}, #sector{}},
-    {{1,5}, #sector{staffed=true}},
-    {{2,1}, #sector{}},
-    {{2,2}, #sector{}},
-    {{2,3}, #sector{blocked=true}},
-    {{2,4}, #sector{}},
-    {{2,5}, #sector{}},
-    {{3,1}, #sector{}},
-    {{3,2}, #sector{}},
-    {{3,3}, #sector{}},
-    {{3,4}, #sector{}},
-    {{3,5}, #sector{}},
-    {{4,1}, #sector{}},
-    {{4,2}, #sector{}},
-    {{4,3}, #sector{blocked=true}},
-    {{4,4}, #sector{blocked=true}},
-    {{4,5}, #sector{}},
-    {{5,1}, #sector{}},
-    {{5,2}, #sector{}},
-    {{5,3}, #sector{blocked=true}},
-    {{5,4}, #sector{food=75}},
-    {{5,5}, #sector{}}
-  ],
-  
   {ok,
    {{one_for_all, MaxRestart, MaxTime},
    [
     {ofo_supervisor,
      {world_ofo_sup, start_link, []},
      permanent, infinity, supervisor, [world_ofo_sup]},
-    {env,
-     {world_env, start_link, [Map]},
-     permanent, 1500, worker, [world_env]}
+    {env_supervisor,
+     {world_envsup, start_link, []},
+     permanent, infinity, supervisor, [world_envsup]}
    ]}}.
