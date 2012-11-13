@@ -341,39 +341,11 @@ handle_info({tcp, _Socket, Msg}, State=#sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
 %% Purpose: Handle information about closed socket. Terminate the
-%%   instance and remove mapping from environment.
-%% Args: Socket state as tuple and server state as State
-%% Returns: {stop normal, SState}.
-%%----------------------------------------------------------------------
-handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket,
-  environ=Env}) when is_pid(Env) ->
-  gen_server:call(Env, death),
-  world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
-  
-  {stop, normal, State};
-
-%%----------------------------------------------------------------------
-%% Function: handle_info/2
-%% Purpose: Handle information about closed socket. Terminate the
 %%   instance.
 %% Args: Socket state as tuple and server state as State
 %% Returns: {stop normal, SState}.
 %%----------------------------------------------------------------------
 handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
-  world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
-  
-  {stop, normal, State};
-
-%%----------------------------------------------------------------------
-%% Function: handle_info/2
-%% Purpose: Handle information abut socket error. Terminate the
-%%   instance and remove mapping from environment.
-%% Args: Socket state as tuple and server state as State
-%% Returns: {stop, normal, SState}.
-%%----------------------------------------------------------------------
-handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket,
-  environ=Env}) when is_pid(Env) ->
-  gen_server:call(Env, death),
   world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
   
   {stop, normal, State};
