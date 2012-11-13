@@ -142,8 +142,10 @@ map_size(Map) ->
 %%----------------------------------------------------------------------
 %% @doc Return the coordinates of the next free sector or false.
 free_sector(Map) ->
-  FreeSectors = lists:filter(fun({_, #sector{staffed=Staffed}}) ->
-                             Staffed == false end, Map),
+  FreeSectors = lists:filter(
+    fun({_, #sector{staffed=Staffed, blocked=Blocked}}) ->
+        (Staffed == false) and (Blocked == false) end, Map),
+  
   case FreeSectors of
     [] ->
       false;
