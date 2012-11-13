@@ -34,15 +34,19 @@
 %%% handle_call(state, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Return the actual internal state of the environment.
-%%% handle_call(birth, From, World)
+%%% handle_call({birth, X, Y}, From, World)
 %%%   Interface for the behaviour gen_server.
-%%%   Add the agent behind pid From to the map.
-%%% handle_call(death, From, World)
-%%%   Interface for the behaviour gen_server.
-%%%   Remove the agent behind pid From from the map.
+%%%   Add the agent behind pid From to the map. If X and Y /= -1 try to
+%%%   set the agent on position X,Y
 %%% handle_call({do, Action}, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Try to fulfill the requested Action.
+%%% handle_cast(death, From, World)
+%%%   Interface for the behaviour gen_server.
+%%%   Remove the agent behind pid From from the map.
+%%% handle_cast(stop, From, World)
+%%%   Interface for the behaviour gen_server.
+%%%   Destroy the world.
 %%%---------------------------------------------------------------------
 
 -module(world_env).
@@ -128,7 +132,7 @@ handle_call({map, Map}, _From, World=#world{agents=Agents})
 %% Args: The new options record (see world_records.hrl).
 %% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
-handle_call({options, Options}, _From, World=#world{agents=Agents})
+handle_call({options, Options}, _From, World)
   when is_record(Options, options) ->
   
   NewWorld = World#world{options=Options},
@@ -137,10 +141,10 @@ handle_call({options, Options}, _From, World=#world{agents=Agents})
   world_helper:log(env, "Loaded options ~n" ++
     string:join(AsciiOptions, "~n")),
   
-  % send broadcast to all clients
-  lists:foreach(fun({Pid, _Coordinates}) ->
-    gen_server:cast(Pid, world_changed)
-  end, Agents),
+  % send broadcast to all clients - deprecated
+  %lists:foreach(fun({Pid, _Coordinates}) ->
+  %  gen_server:cast(Pid, world_changed)
+  %end, Agents),
   
   {reply, ok, NewWorld};
 
@@ -187,21 +191,28 @@ handle_call(info, _From, World=#world{map=Map, options=Opt,
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
-%% Purpose: Add the agent behind pid From to the map
+%% Purpose: Add the agent behind pid From to the map on the desired
+%%   position X,Y. If X or Y is 0 they will be ignored.
 %% Args: -
-%% Returns: {reply, {ok, MapSize}, #world} | {reply, map_full, #world}.
+%% Returns: {reply, {ok, MapSize}, #world} | {reply, map_full, #world}
+%%    | {reply, invalid_position, #world}
+%%    | {reply, access_denied, #world}.
 %%----------------------------------------------------------------------
-handle_call(birth, {Pid, _Tag},
+handle_call({birth, X, Y}, {Pid, _Tag},
   World=#world{options=Options, map=Map, agents=Agents}) ->
   if
     Options#options.max_agents > 0,
       length(Agents) >= Options#options.max_agents ->
       {reply, map_full, World};
     true ->
-      Sector = world_helper:free_sector(Map),
+      Sector = world_helper:birth_sector(World, X, Y),
       case Sector of
-        false ->
+        {error, map_full} ->
           {reply, map_full, World};
+        {error, invalid_position} ->
+          {reply, invalid_position, World};
+        {error, access_denied} ->
+          {reply, access_denied, World};
         {Coordinates, Properties} ->
           NewMap = lists:keyreplace(Coordinates, 1, Map, {Coordinates,
                    Properties#sector{staffed=true}}),
@@ -214,39 +225,6 @@ handle_call(birth, {Pid, _Tag},
           {reply, ok, NewWorld}
       end
   end;
-
-%%----------------------------------------------------------------------
-%% Function: handle_call/3
-%% Purpose: Remove the agent behind pid From from the map.
-%% Args: -
-%% Returns: {reply, ok, #world}.
-%%----------------------------------------------------------------------
-handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
-  % Free sector on map
-  Agent = lists:keyfind(Pid, 1, Agents),
-  NewMap = case Agent of
-    false ->
-      Map;
-    _ ->
-      {_Pid, Coordinates} = Agent,
-      Result = lists:keyfind(Coordinates, 1, Map),
-      case Result of
-        false ->
-          Map;
-        {_, Sector} ->
-          NewSector = {Coordinates, Sector#sector{staffed=false}},
-          lists:keyreplace(Coordinates, 1, Map, NewSector)
-      end
-  end,
-  
-  % remove from agent list
-  NewAgents = lists:keydelete(Pid, 1, Agents),
-  
-  NewWorld = World#world{map=NewMap, agents = NewAgents},
-  
-  world_helper:log(client, "Client ~w left world", [Pid]),
-  
-  {reply, ok, NewWorld};
 
 %%----------------------------------------------------------------------
 %% Function: handle_call/3
@@ -372,7 +350,40 @@ handle_call({do, Action}, {Pid, _Tag},
         _ ->
           {reply, {error, command_unknown}, World}
       end
-  end.
+  end;
+
+%%----------------------------------------------------------------------
+%% Function: handle_call/3
+%% Purpose: Remove the agent behind pid From from the map.
+%% Args: -
+%% Returns: {noreply, #world}.
+%%----------------------------------------------------------------------
+handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
+  % Free sector on map
+  Agent = lists:keyfind(Pid, 1, Agents),
+  NewMap = case Agent of
+    false ->
+      Map;
+    _ ->
+      {_Pid, Coordinates} = Agent,
+      Result = lists:keyfind(Coordinates, 1, Map),
+      case Result of
+        false ->
+          Map;
+        {_, Sector} ->
+          NewSector = {Coordinates, Sector#sector{staffed=false}},
+          lists:keyreplace(Coordinates, 1, Map, NewSector)
+      end
+  end,
+  
+  % remove from agent list
+  NewAgents = lists:keydelete(Pid, 1, Agents),
+  
+  NewWorld = World#world{map=NewMap, agents = NewAgents},
+  
+  world_helper:log(client, "Client ~w left world", [Pid]),
+  
+  {noreply, NewWorld}.
 
 %%----------------------------------------------------------------------
 %% Function: handle_cast/2
@@ -382,7 +393,12 @@ handle_call({do, Action}, {Pid, _Tag},
 %%----------------------------------------------------------------------
 %% @doc Interface for the behaviour gen_server.
 %%   Only used to stop the environment
-handle_cast(stop, World) ->
+handle_cast(stop, World=#world{agents=Agents}) ->
+  % send broadcast to all clients
+  lists:foreach(fun({Pid, _Coordinates}) ->
+    gen_server:cast(Pid, world_destroyed)
+  end, Agents),
+  
   {stop, normal, World}.
   
 %%----------------------------------------------------------------------

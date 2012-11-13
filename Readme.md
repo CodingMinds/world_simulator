@@ -48,8 +48,10 @@ implementations.
 
 #### Server
 
- * Implement handling of multiple worlds/environments on client socket
- * Implement deletion of worlds
+ * Improve line ending (add CR)
+ * Fix HTML UI for multiple worlds
+ * Add more logging within world_env.erl for multiple worlds
+ * Implement *i to display agents. not *.
 
 #### Client demos
 
@@ -67,7 +69,8 @@ world (application)
       |    |-> world_sservsup (supervisor)
       |    |    '-> world_sserv (gen_server)
       |    '-> world_http
-      '-> world_env (gen_server)
+      '-> world_envsup (supervisor)
+           '-> world_env (gen_server)
 </pre>
 
 #### world_sup.erl
@@ -77,6 +80,9 @@ one_for_one supervisor and then the simulated worlds.
 #### world_ofo_sup.erl
 A supervisor with one_for_one restart strategy which monitors all supervisor
 ans worker which can be restarted without big trouble or dependencies.
+
+#### world_envsup.erl
+The supervisor which manages all virtual environments/worlds.
 
 #### world_env.erl
 The gen_server which represents a virtual world and holds all the logic.
@@ -134,7 +140,7 @@ to the world.
  * should consumed food respwan (default: yes)
  * should consumed food respawn on the same place (default: yes)
 
-All this options can changed on runtime if you are conencted with the control
+All this options can changed on runtime if you are connected with the control
 port. The following command will set the maximum client count to 7,
 activates the food respawn and let the food respawn on random places.
 
@@ -258,9 +264,10 @@ ctrl port to get the whole environment.
 105 EOL  
 106 world ID spawned
 107 world ID loaded
+107 world ID destroyed
 
 200 Speak, friend, and ente(r)  
-200 welcome in this [1-9]+x[1-9]+ world  
+200 welcome in this [1-9]+x[1-9]+ world. Your ID is PID  
 200 good bye  
 201 [.|O|F|*]{8}  
 202 food [0-9]+  
@@ -281,12 +288,12 @@ ctrl port to get the whole environment.
 #### Admin
 
 world list  
-world new [ASCII_REPRESENTATION]  
-world load ID
+world spawn [ASCII_REPRESENTATION]  
+world load ID  
+world destroy ID
 
 map [ASCII_REPRESENTATION]  
 options [OPTIONS ..]  
-destroy  
 kill all (not yet implemented)  
 shutdown (not yet implemented)
 
