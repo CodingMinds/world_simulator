@@ -48,7 +48,8 @@ implementations.
 
 #### Server
 
- * Implement handling of multiple worlds/environments
+ * Implement handling of multiple worlds/environments on client socket
+ * Implement deletion of worlds
 
 #### Client demos
 
@@ -252,6 +253,7 @@ ctrl port to get the whole environment.
 104 option listings  
 105 ID, Name, X, Y, Agents, possible Agents  
 105 ID X Y Agents MaxAgents  
+105 EOL  
 106 world ID spawned
 107 world ID loaded
 

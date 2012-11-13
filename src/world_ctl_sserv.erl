@@ -235,7 +235,7 @@ handle_info({tcp, _Socket, "world list" ++ _},
     end, Worlds),
   
   FormatedWorlds = "105 ID, Name, X, Y, Agents, possible Agents~n" ++
-    "105 " ++ string:join(AsciiWorlds, "~n105 "),
+    "105 " ++ string:join(AsciiWorlds, "~n105 ") ++ "~n105 EOL",
   world_helper:send(Socket, FormatedWorlds),
   
   world_helper:log(info, "Ctl: Socket ~w received world",
