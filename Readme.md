@@ -247,10 +247,12 @@ ctrl port to get the whole environment.
 #### Sever
 
 100 ASCII map representation  
+100 EOL
 101 world changed (deprecated)  
 102 environ [.|O|F|*]{8}  
 103 free text help replies  
 104 option listings  
+104 EOL
 105 ID, Name, X, Y, Agents, possible Agents  
 105 ID X Y Agents MaxAgents  
 105 EOL  

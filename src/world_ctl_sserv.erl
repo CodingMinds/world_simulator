@@ -434,11 +434,13 @@ call_world(Socket, Command, Environment) ->
       world_helper:send(Socket, "201 success");
     {map, Map} ->
       AsciiRows = world_helper:map_to_ascii(Map),
-      AsciiMap = "100 " ++ string:join(AsciiRows, "~n100 "),
+      AsciiMap = "100 " ++ string:join(AsciiRows, "~n100 ") ++
+        "~n100 EOL",
       world_helper:send(Socket, AsciiMap);
     {options, Options} ->
       AsciiOptions = "104 " ++
-        string:join(world_helper:options_to_ascii(Options), "~n104 "),
+        string:join(world_helper:options_to_ascii(Options), "~n104 ") ++
+          "~n104 EOL",
       world_helper:send(Socket, AsciiOptions);
     {error, bad_arg} ->
       world_helper:send(Socket, "300 bad argument");
