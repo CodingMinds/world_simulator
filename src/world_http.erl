@@ -20,7 +20,7 @@
 -module(world_http).
 -author('M. Bittorf <info@coding-minds.com>').
 
--export([start_link/0, worlds/3, map/3, options/3]).
+-export([start_link/0, worlds/3, map/3, options/3, pids/3]).
 
 -include("world_records.hrl").
 
@@ -144,6 +144,41 @@ options(SessionID, _Env, Input) ->
           string:join(AsciiOptions, "\n");
         {error, Reason} ->
           io_lib:format("Error: ~p", [Reason])
+      end
+  end,
+  
+  mod_esi:deliver(SessionID, [
+    "Content-Type: text/plain\r\n\r\n",
+    Content
+  ]).
+
+%%----------------------------------------------------------------------
+%% Function: pids/3
+%% Purpose: Interface for mod_esi to server a translation from *i to the
+%%   Agent Pid (of the socket).
+%% Args: SessionId, Environment and Input from httpd
+%% Returns: mod_esi:deliver return value.
+%%----------------------------------------------------------------------
+%% @doc Interface for mod_esi to server a translation from *i to the
+%%   Agent Pid (of the socket).
+pids(SessionID, _Env, Input) ->
+  DecodedInput = http_uri:decode(Input),
+  Content = case world_helper:ascii_to_world(DecodedInput) of
+    false ->
+      io_lib:format("Error: Wrong or no parameter (~s). Use ?<Pid>",
+        [DecodedInput]);
+    Pid ->
+      case gen_server:call(Pid, state) of
+        {state, #world{agents=Agents}} ->
+          {_, Ret} = lists:foldl(fun({EPid, _Coordinates}, {I, Ret}) ->
+              {I+1, Ret ++ "*" ++ integer_to_list(I)
+                ++ "\t" ++ pid_to_list(EPid) ++ "\n"}
+            end, {1, ""}, Agents),
+          Ret;
+        {error, Reason} ->
+          io_lib:format("Error: ~p", [Reason]);
+        Else ->
+          io_lib:format("Error: ~p", [Else])
       end
   end,
   

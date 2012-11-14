@@ -173,6 +173,10 @@ the amount of energy client interactions cost, etc..
 
 ## Example Usage
 
+#### Configuration
+
+All ports and paths can be configured with ebin/world.app.
+
 #### Compiling
 
 Before the first run (or after sourcecode modifications) you need to
