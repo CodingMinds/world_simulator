@@ -48,11 +48,10 @@ implementations.
 
 #### Server
 
- * Improve line ending (add CR)
- * Fix HTML UI for multiple worlds
  * Add more logging within world_env.erl for multiple worlds
- * Implement *i to display agents. not *.
+ * Improve line ending (add CR)
  * Change 201 success to 201 env string
+ * Implement *i to display agents. not *.
 
 #### Client demos
 
