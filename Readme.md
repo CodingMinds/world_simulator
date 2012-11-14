@@ -52,6 +52,7 @@ implementations.
  * Fix HTML UI for multiple worlds
  * Add more logging within world_env.erl for multiple worlds
  * Implement *i to display agents. not *.
+ * Change 201 success to 201 env string
 
 #### Client demos
 
@@ -281,6 +282,7 @@ ctrl port to get the whole environment.
 400 unknown command  
 403 access denied  
 404 not found
+405 invalid position
 
 500 sever made a boo boo  
 501 world destroyed

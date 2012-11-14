@@ -209,7 +209,7 @@ handle_info({tcp, _Socket, "world load " ++ String},
             
             {noreply, State#sstate{environ=Pid}};
           invalid_position ->
-            world_helper:send(Socket, "403 access denied"),
+            world_helper:send(Socket, "405 invalid position"),
             
             {noreply, State};
           map_full ->
