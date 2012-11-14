@@ -1,4 +1,4 @@
-var selectedEnv;
+var activePid;
 
 $(document).ready(function(){
   setInterval(refreshContent, 1000);
@@ -7,7 +7,7 @@ $(document).ready(function(){
 });
 
 function activate(Pid) {
-  selectedEnv = Pid;
+  activePid = Pid;
   refreshContent();
 }
 
@@ -16,14 +16,14 @@ function refreshWorldListing() {
     var items = [];
 
     $.each(worlds, function(key, val) {
-      if(!selectedEnv) {
-        selectedEnv = val.Pid;
+      if(!activePid) {
+        activePid = val.Pid;
       }
       
-      items.push('<li' + (val.Pid == selectedEnv ? ' class="disabled"' : '') + '><a href="javascript:activate(\''
-        + val.Pid + '\');">' + val.Name + ' (' + val.X + 'x' + val.Y + ') '
-        + val.AgentCount + ' of ' + val.MaxAgents +
-        ' agents online</a></li>');
+      items.push('<li' + (val.Pid == activePid ? ' class="active"' : '')
+        + '><a href="javascript:activate(\'' + val.Pid + '\');">'
+        + val.Name + ' (' + val.X + 'x' + val.Y + ') ' + val.AgentCount
+        + ' of ' + val.MaxAgents + ' agents online</a></li>');
     });
 
     $('#worlds_list').replaceWith($('<ul/>', {
@@ -35,18 +35,19 @@ function refreshWorldListing() {
 }
 
 function refreshContent() {
-  if(!selectedEnv) {
+  if(!activePid) {
     return;
   }
   
-  $.get("/erl/world_http:map?" + selectedEnv, function(map) {
+  $.get("/erl/world_http:map?" + activePid, function(map) {
     asciimap = '';
     $.each(map.split('\n'), function(index, row) {
       asciimap += row.split('').join('  ') + '\n';
     });
     $('#map').html(asciimap);
   });
-  $.get("/erl/world_http:options?" + selectedEnv, function(options) {
+  
+  $.get("/erl/world_http:options?" + activePid, function(options) {
     $('#options').html(options);
   });
 }
