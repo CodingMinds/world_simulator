@@ -21,11 +21,11 @@
 %%---------------------------------------------------------------------
 %% Data Type: sector
 %% where:
-%%   staffed: An atom (default is false).
+%%   staffed: A integer (default is 0).
 %%   food: A integer (default is 0).
 %%   blocked: An atom (default is false).
 %%----------------------------------------------------------------------
--record(sector, {staffed = false, food = 0, blocked = false}).
+-record(sector, {staffed = 0, food = 0, blocked = false}).
 
 %%---------------------------------------------------------------------
 %% Data Type: sstate

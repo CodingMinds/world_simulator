@@ -183,8 +183,9 @@ handle_call(birth, {Pid, _Tag},
         false ->
           {reply, map_full, World};
         {Coordinates, Properties} ->
+          
           NewMap = lists:keyreplace(Coordinates, 1, Map, {Coordinates,
-                   Properties#sector{staffed=true}}),
+                   Properties#sector{staffed=1+length(Agents)}}),
           
           NewWorld = World#world{map = NewMap,
                      agents = Agents ++ [ {Pid, Coordinates} ]},
@@ -214,7 +215,7 @@ handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
         false ->
           Map;
         {_, Sector} ->
-          NewSector = {Coordinates, Sector#sector{staffed=false}},
+          NewSector = {Coordinates, Sector#sector{staffed=0}},
           lists:keyreplace(Coordinates, 1, Map, NewSector)
       end
   end,
@@ -240,28 +241,29 @@ handle_call({do, Action}, {Pid, _Tag},
   World=#world{map=Map, agents=Agents}) ->
   %%--------------------------------------------------------------------
   %% Anonymous function: fun/1
-  %% Purpose: Return the environ String for the position tuple
-  %% Args: Position as tuple {x, y}.
+  %% Purpose: Return the environ String for the position tuple on map
+  %%   BaseMap
+  %% Args: Position as tuple {x, y} and the map as BaseMap.
   %% Returns: String
   %%--------------------------------------------------------------------
-  GetEnvironString = fun({X, Y}) ->
+  GetEnvironString = fun({X, Y}, BaseMap) ->
     [
       world_helper:ascii_rep(
-        world_helper:get_sector(X,   Y-1, Map)),
+        world_helper:get_sector(X,   Y-1, BaseMap)),
       world_helper:ascii_rep(
-        world_helper:get_sector(X+1, Y-1, Map)),
+        world_helper:get_sector(X+1, Y-1, BaseMap)),
       world_helper:ascii_rep(
-        world_helper:get_sector(X+1, Y,   Map)),
+        world_helper:get_sector(X+1, Y,   BaseMap)),
       world_helper:ascii_rep(
-        world_helper:get_sector(X+1, Y+1, Map)),
+        world_helper:get_sector(X+1, Y+1, BaseMap)),
       world_helper:ascii_rep(
-        world_helper:get_sector(X,   Y+1, Map)),
+        world_helper:get_sector(X,   Y+1, BaseMap)),
       world_helper:ascii_rep(
-        world_helper:get_sector(X-1, Y+1, Map)),
+        world_helper:get_sector(X-1, Y+1, BaseMap)),
       world_helper:ascii_rep(
-        world_helper:get_sector(X-1, Y,   Map)),
+        world_helper:get_sector(X-1, Y,   BaseMap)),
       world_helper:ascii_rep(
-        world_helper:get_sector(X-1, Y-1, Map))
+        world_helper:get_sector(X-1, Y-1, BaseMap))
     ]
   end,
   
@@ -281,40 +283,39 @@ handle_call({do, Action}, {Pid, _Tag},
           [Pid, CoordinatesNew]),
         
         {reply, {error, blocked}, World};
-      SectorNew#sector.staffed == true ->
+      SectorNew#sector.staffed /= 0 ->
         world_helper:log(client, "Client ~w tried ~w: staffed",
           [Pid, CoordinatesNew]),
         
         {reply, {error, staffed}, World};
-      SectorNew#sector.food /= 0 ->
-        NewAgents = lists:keyreplace(Pid, 1, Agents,
-                    {Pid, CoordinatesNew}),
-        NewMap = lists:keyreplace(CoordinatesNow, 1, Map,
-                 {CoordinatesNow, SectorNow#sector{staffed=false}}),
-        NewMap2 = lists:keyreplace(CoordinatesNew, 1, NewMap,
-                  {CoordinatesNew, SectorNew#sector{staffed=true}}),
-        NewWorld = world_helper:consume_food(
-          CoordinatesNew, World#world{map=NewMap2, agents=NewAgents}),
-        
-        world_helper:log(client, "Client ~w tried ~w: food ~B",
-          [Pid, CoordinatesNew, SectorNew#sector.food]),
-        
-        {reply, {food, SectorNew#sector.food}, NewWorld};
       true ->
         NewAgents = lists:keyreplace(Pid, 1, Agents,
                     {Pid, CoordinatesNew}),
         NewMap = lists:keyreplace(CoordinatesNow, 1, Map,
-                 {CoordinatesNow, SectorNow#sector{staffed=false}}),
+                 {CoordinatesNow, SectorNow#sector{staffed=0}}),
+        AgentPos = string:str(NewAgents, [{Pid, CoordinatesNew}]),
         NewMap2 = lists:keyreplace(CoordinatesNew, 1, NewMap,
-                  {CoordinatesNew, SectorNew#sector{staffed=true}}),
-        NewWorld = World#world{map=NewMap2, agents=NewAgents},
+                  {CoordinatesNew, SectorNew#sector{staffed=AgentPos}}),
         
-        Environ = GetEnvironString(CoordinatesNew),
-        
-        world_helper:log(client, "Client ~w tried ~w: success",
-          [Pid, CoordinatesNew]),
-          
-        {reply, {ok, Environ}, NewWorld}
+        if
+          SectorNew#sector.food /= 0 ->
+            NewWorld = world_helper:consume_food(CoordinatesNew,
+              World#world{map=NewMap2, agents=NewAgents}),
+            
+            world_helper:log(client, "Client ~w tried ~w: food ~B",
+              [Pid, CoordinatesNew, SectorNew#sector.food]),
+            
+            {reply, {food, SectorNew#sector.food}, NewWorld};
+          true ->
+            NewWorld = World#world{map=NewMap2, agents=NewAgents},
+            
+            Environ = GetEnvironString(CoordinatesNew, NewMap2),
+            
+            world_helper:log(client, "Client ~w tried ~w: success",
+              [Pid, CoordinatesNew]),
+              
+            {reply, {ok, Environ}, NewWorld}
+        end
     end
   end,
   
@@ -358,7 +359,7 @@ handle_call({do, Action}, {Pid, _Tag},
               {reply, {error, bad_arg}, World}
           end;
         environ ->
-          Environ = GetEnvironString({X, Y}),
+          Environ = GetEnvironString({X, Y}, Map),
           
           {reply, {environ, Environ}, World};
         _ ->

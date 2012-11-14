@@ -112,7 +112,12 @@ map_to_ascii(Map) ->
   lists:foldl(fun(Yi, RowAcc) ->
                  Col = lists:foldl(
                          fun(Xi, ColAcc) ->
-                           ColAcc ++ ascii_rep(get_sector(Xi, Yi, Map))
+                           Sector = ascii_rep(get_sector(Xi, Yi, Map)),
+                           case length(Sector) of
+                             1 -> ColAcc ++ " " ++ Sector ++ " ";
+                             2 -> ColAcc ++ " " ++ Sector;
+                             3 -> ColAcc ++ Sector
+                           end
                          end,
                        [], lists:seq(1, X)),
                  RowAcc ++ [Col]
@@ -144,7 +149,7 @@ map_size(Map) ->
 free_sector(Map) ->
   FreeSectors = lists:filter(
     fun({_, #sector{staffed=Staffed, blocked=Blocked}}) ->
-        (Staffed == false) and (Blocked == false) end, Map),
+        (Staffed == 0) and (Blocked == false) end, Map),
   
   case FreeSectors of
     [] ->
@@ -223,8 +228,8 @@ ascii_rep({_Coordinates, Sector}) ->
   if
     Sector#sector.blocked == true ->
       "O";
-    Sector#sector.staffed == true ->
-      "*";
+    Sector#sector.staffed /= 0 ->
+      "*" ++ integer_to_list(Sector#sector.staffed);
     Sector#sector.food /= 0 ->
       "F";
     true ->

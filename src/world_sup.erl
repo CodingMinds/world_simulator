@@ -55,7 +55,7 @@ init([]) ->
     {{1,2}, #sector{}},
     {{1,3}, #sector{blocked=true}},
     {{1,4}, #sector{}},
-    {{1,5}, #sector{staffed=true}},
+    {{1,5}, #sector{staffed=1}},
     {{2,1}, #sector{}},
     {{2,2}, #sector{}},
     {{2,3}, #sector{blocked=true}},
