@@ -1,22 +1,24 @@
 %%---------------------------------------------------------------------
 %% Data Type: options
 %% where:
-%%   static_food: An atom (default is true).
-%%   respawn_food: An atom (default is true).
-%%   respawn_time: A integer (default is 0).
 %%   max_agents: A integer (default is 0).
+%%   respawn_food: An atom (default is true).
+%%   static_food: An atom (default is true).
+%%   env_name: A string (default is "").
+%%   allow_startposition: An atom (default is true).
 %%----------------------------------------------------------------------
 -record(options, {max_agents = 0, respawn_food = true,
-  static_food = true, respawn_time = 0}).
+  static_food = true, env_name = "unknown",
+  allow_startposition = true}).
 
 %%---------------------------------------------------------------------
 %% Data Type: world
 %% where:
-%%   map: A list of tuples {{x,y}, sector} (default is undefined).
+%%   map: A list of tuples {{x,y}, sector} (default is []).
 %%   options: A options record.
 %%   agents: A list of tuples {pid, {x,y}} (default is []).
 %%----------------------------------------------------------------------
--record(world, {map, options = #options{}, agents = []}).
+-record(world, {map = [], options = #options{}, agents = []}).
 
 %%---------------------------------------------------------------------
 %% Data Type: sector
@@ -31,5 +33,6 @@
 %% Data Type: sstate
 %% where:
 %%   socket: A socket (default is undefined).
+%%   environ: A Pid of world_env (default is undefined)
 %%----------------------------------------------------------------------
--record(sstate, {socket}).
+-record(sstate, {socket, environ}).

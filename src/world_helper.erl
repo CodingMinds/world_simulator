@@ -8,12 +8,17 @@
 %%% @end
 %%%---------------------------------------------------------------------
 %%% Exports
+%%% ascii_to_world(PidString)
+%%%   Translate a string to a pid and validates if it's a running
+%%%   environment.
 %%% ascii_to_map(MapString)
 %%%   Translate the given string MapString to a valid map.
 %%% map_to_ascii(Map)
 %%%   Translate a map into as ASCII representation per row.
 %%% map_size(Map)
 %%%   Extract the highest X and Y positions of the given map.
+%%% birth_sector(Map, X, Y)
+%%%   Return the coordinates of the birth sector or some error codes.
 %%% free_sector(Map)
 %%%   Return the coordinates of the next free sector or false.
 %%% consume_food(Coordinates, World)
@@ -44,12 +49,38 @@
 -module(world_helper).
 -author('M. Bittorf <info@coding-minds.com>').
 
--export([ascii_to_map/1, map_to_ascii/1, map_size/1,
-  free_sector/1, consume_food/2, ascii_rep/1, get_sector/3,
-  ascii_to_options/1, options_to_ascii/1, send/2, send/3, log/2,
-  log/3]).
+-export([ascii_to_world/1, ascii_to_map/1, map_to_ascii/1, map_size/1,
+  birth_sector/3, free_sector/1, consume_food/2, ascii_rep/1,
+  get_sector/3, ascii_to_options/1, options_to_ascii/1, send/2, send/3,
+  log/2, log/3]).
 
 -include("world_records.hrl").
+
+%%----------------------------------------------------------------------
+%% Function: ascii_to_world/1
+%% Purpose: Translate a string to a pid and validates if it's a running
+%%   environment.
+%% Args: An ASCII string which represents the pid.
+%% Returns: Pid | false
+%%----------------------------------------------------------------------
+%% @doc Translate a string to a pid and validates if it's a running
+%%   environment.
+ascii_to_world(PidString) ->
+  case catch is_process_alive(list_to_pid(PidString)) of
+    {'EXIT', _} ->
+      false;
+    false ->
+      false;
+    true ->
+      Supervisor = whereis(world_envsup),
+      Pid = list_to_pid(PidString),
+      case process_info(Pid, links) of
+        {links, [Supervisor]} ->
+          Pid;
+        _ ->
+          false
+      end
+  end.
 
 %%----------------------------------------------------------------------
 %% Function: ascii_to_map/1
@@ -131,6 +162,9 @@ map_to_ascii(Map) ->
 %% Returns: {X, Y}
 %%----------------------------------------------------------------------
 %% @doc Extract the highest X and Y positions of the given map.
+map_size([]) ->
+  {1, 1};
+
 map_size(Map) ->
   Coordinates = lists:map(fun({{X, Y}, _}) -> {X, Y} end, Map),
   lists:nth(1,
@@ -140,23 +174,55 @@ map_size(Map) ->
                Coordinates)).
 
 %%----------------------------------------------------------------------
-%% Function: free_sector/1
-%% Purpose: Return the coordinates of the next free sector or false.
-%% Args: Map as map which should be used.
-%% Returns: {{X, Y}, #sector} | false.
+%% Function: birth_sector/3
+%% Purpose: Return the coordinates of the birth sector or some error
+%%   codes.
+%% Args: World as map which should be used, X and Y as desired place. If
+%%   X or Y are 0 they will be ignored.
+%% Returns: {{X, Y}, #sector} | {error, map_full}
+%%   | {error, access_denied} | {error, invalid_position}.
 %%----------------------------------------------------------------------
-%% @doc Return the coordinates of the next free sector or false.
+%% @doc Return the coordinates of the birth sector or some error codes.
+birth_sector(#world{options=Options, map=Map}, X, Y) ->
+  if
+    (X == 0) or (Y == 0) ->
+      free_sector(Map);
+    Options#options.allow_startposition == false ->
+      {error, access_denied};
+    true ->
+      FreeSectors = lists:filter(
+        fun({{Xi, Yi}, #sector{staffed=Staffed, blocked=Blocked}}) ->
+          (Xi == X) and (Yi == Y) and
+          (Staffed == false) and (Blocked == false)
+        end, Map),
+        
+      case FreeSectors of
+        [] ->
+          {error, invalid_position};
+        _ ->
+          hd(FreeSectors)
+      end
+  end.
+
+%%----------------------------------------------------------------------
+%% Function: free_sector/1
+%% Purpose: Return the coordinates of the next free sector or map_full.
+%% Args: Map as map which should be used.
+%% Returns: {{X, Y}, #sector} | {error, map_full}.
+%%----------------------------------------------------------------------
+%% @doc Return the coordinates of the next free sector or
+%%   {error, map_full}.
 free_sector(Map) ->
   FreeSectors = lists:filter(
     fun({_, #sector{staffed=Staffed, blocked=Blocked}}) ->
-        (Staffed == 0) and (Blocked == false) end, Map),
+      (Staffed == 0) and (Blocked == false)
+    end, Map),
   
   case FreeSectors of
     [] ->
-      false;
+      map_full;
     _ ->
-      [ FreeSector | _ ] = FreeSectors,
-      FreeSector
+      hd(FreeSectors)
   end.
 
 %%----------------------------------------------------------------------
@@ -263,21 +329,24 @@ get_sector(X, Y, Map) ->
 %% @doc Translate a string to a new options record.
 ascii_to_options(OptionsString) ->
   Result = (catch case string:tokens(OptionsString, " ") of
-    [MaxAgents, RespawnFood, StaticFood] ->
+    [MaxAgents, RespawnFood, StaticFood, EName, AStartPosition] ->
       MAgents = list_to_integer(MaxAgents),
       RFood = list_to_atom(RespawnFood),
       SFood = list_to_atom(StaticFood),
+      AStartPos = list_to_atom(AStartPosition),
       
       % ugly way to verify that the atoms are true or false
       % and the integer >= 0
       if
         MAgents < 0 ->
           {error, bad_arg};
-        RFood or SFood or true ->
+        RFood or SFood or AStartPos or true ->
           #options{
             max_agents = MAgents,
             respawn_food = RFood,
-            static_food = SFood
+            static_food = SFood,
+            env_name = EName,
+            allow_startposition = AStartPos
           };
         true ->
           {error, bad_arg}
@@ -307,7 +376,11 @@ options_to_ascii(Options) when is_record(Options, options) ->
   [
   "max agents: " ++ integer_to_list(Options#options.max_agents),
   "respawn food: " ++ atom_to_list(Options#options.respawn_food),
-  "static food positions: " ++ atom_to_list(Options#options.static_food)
+  "static food positions: " ++
+    atom_to_list(Options#options.static_food),
+  "environment name: " ++ Options#options.env_name,
+  "allow start position: " ++
+    atom_to_list(Options#options.allow_startposition)
   ].
 
 %%----------------------------------------------------------------------
