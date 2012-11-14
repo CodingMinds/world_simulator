@@ -356,7 +356,7 @@ handle_call({do, Action}, {Pid, _Tag},
 %% Function: handle_call/3
 %% Purpose: Remove the agent behind pid From from the map.
 %% Args: -
-%% Returns: {noreply, #world}.
+%% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
 handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
   % Free sector on map
@@ -383,7 +383,7 @@ handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
   
   world_helper:log(client, "Client ~w left world", [Pid]),
   
-  {noreply, NewWorld}.
+  {reply, ok, NewWorld}.
 
 %%----------------------------------------------------------------------
 %% Function: handle_cast/2

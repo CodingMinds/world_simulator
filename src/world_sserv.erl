@@ -565,19 +565,28 @@ call_world(#sstate{socket=Socket, environ=Env}, Command) ->
 
 %%----------------------------------------------------------------------
 %% Function: close_connection/1
+%% Purpose: Terminate connection and remove mapping from world.
+%% Args: Actual server state State
+%% Returns: ok
+%%----------------------------------------------------------------------
+%% @doc Terminate connection and remove mapping from world.
+%% @private
+close_connection(#sstate{socket=Socket, environ=Env})
+  when is_pid(Env) ->
+  world_helper:send(Socket, "200 good bye"),
+  gen_server:call(Env, death),
+  gen_tcp:close(Socket),
+  world_helper:log(info, "Socket ~w closed", [Socket]);
+
+%%----------------------------------------------------------------------
+%% Function: close_connection/1
 %% Purpose: Terminate connection.
 %% Args: Actual server state State
 %% Returns: ok
 %%----------------------------------------------------------------------
-%% @doc Terminate connection and remove mapping from world if possible
+%% @doc Terminate connection.
 %% @private
-close_connection(#sstate{socket=Socket, environ=Env}) ->
+close_connection(#sstate{socket=Socket}) ->
   world_helper:send(Socket, "200 good bye"),
   gen_tcp:close(Socket),
-  if
-    is_pid(Env) ->
-      gen_server:call(Env, death);
-    true ->
-      ok
-  end,
   world_helper:log(info, "Socket ~w closed", [Socket]).
