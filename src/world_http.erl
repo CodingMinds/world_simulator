@@ -91,8 +91,6 @@ worlds(SessionID, _Env, _Input) ->
   
   Content = "[ " ++ string:join(AsciiWorlds, ", ") ++ " ]",
   
-  io:format("~s~n", [Content]),
-  
   mod_esi:deliver(SessionID, [
     "Content-Type: application/json\r\n\r\n",
     Content
