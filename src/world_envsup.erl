@@ -57,7 +57,7 @@ start_link() ->
 %%   Creates a new default world. After that returns the child
 %%   specification for the supervisor.
 init([]) ->
-  spawn_link(fun default_world/0),
+  spawn_link(fun default_worlds/0),
   
   {ok, {{simple_one_for_one, 60, 3600},
        [{environment,
@@ -88,43 +88,40 @@ spawn_world(AdditionalArguments) ->
   supervisor:start_child(?MODULE, [AdditionalArguments]).
 
 %%----------------------------------------------------------------------
-%% Function: default_world/0
-%% Purpose: Creates a simple default world.
+%% Function: default_worlds/0
+%% Purpose: Spawns the initial default worlds.
 %% Args: -
 %% Returns: ok
 %%----------------------------------------------------------------------
-%% @doc Creates a simple default world.
+%% @doc Spawns the initial default worlds.
 %% @private
-default_world() ->
+default_worlds() ->
   
-  %% Add a default map for the first environment startup.
-  Map = [
-    {{1,1}, #sector{}},
-    {{1,2}, #sector{}},
-    {{1,3}, #sector{blocked=true}},
-    {{1,4}, #sector{}},
-    {{1,5}, #sector{staffed=true}},
-    {{2,1}, #sector{}},
-    {{2,2}, #sector{}},
-    {{2,3}, #sector{blocked=true}},
-    {{2,4}, #sector{}},
-    {{2,5}, #sector{}},
-    {{3,1}, #sector{}},
-    {{3,2}, #sector{}},
-    {{3,3}, #sector{}},
-    {{3,4}, #sector{}},
-    {{3,5}, #sector{}},
-    {{4,1}, #sector{}},
-    {{4,2}, #sector{}},
-    {{4,3}, #sector{blocked=true}},
-    {{4,4}, #sector{blocked=true}},
-    {{4,5}, #sector{}},
-    {{5,1}, #sector{}},
-    {{5,2}, #sector{}},
-    {{5,3}, #sector{blocked=true}},
-    {{5,4}, #sector{food=75}},
-    {{5,5}, #sector{}}
-  ],
+  %% Default 5x5 environment.
+  Map1 = world_helper:ascii_to_map(".....|.....|OO.OO|...OF|....."),
+  Options1 = #options{env_name="defaultMap", max_agents=4},
   
-  spawn_world([Map]),
+  %% Restrictive 9x9 environment
+  Map2 = world_helper:ascii_to_map(".O.......|.O.OOOOO.|.O.OF....|"
+    ".....OOOO|OOOO.....|FO.OOO.O.|.O.....O.|.O.OOOOO.|...O....."),
+  Options2 = #options{env_name="restrictiveDemo", max_agents=2,
+    allow_startposition=false},
+  
+  %% WOOD1 55x15
+  WoodBlockRow =
+    string:copies(".....", 11) ++ "|" ++
+    string:copies(".OOF.", 11) ++ "|" ++
+    string:copies(".OOO.", 11) ++ "|" ++
+    string:copies(".OOO.", 11) ++ "|" ++
+    string:copies(".....", 11) ++ "|",
+  Wood1 = string:copies(WoodBlockRow, 3),
+  
+  Map3 = world_helper:ascii_to_map(Wood1),
+  Options3 = #options{env_name="WOOD1", max_agents=1,
+    allow_startposition=false},
+  
+  spawn_world([Map1, Options1]),
+  spawn_world([Map2, Options2]),
+  spawn_world([Map3, Options3]),
+  
   ok.
