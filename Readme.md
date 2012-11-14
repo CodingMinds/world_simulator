@@ -51,6 +51,8 @@ the implementations.
 
  * Add more logging within world_env.erl for multiple worlds
  * Improve line ending (add CR)
+ * Replace PIDs with unique names or sthg like this. list_to_pid is only
+   for debugging purposes and erlang interna.
 
 #### Client demos
 
