@@ -193,7 +193,7 @@ birth_sector(#world{options=Options, map=Map}, X, Y) ->
       FreeSectors = lists:filter(
         fun({{Xi, Yi}, #sector{staffed=Staffed, blocked=Blocked}}) ->
           (Xi == X) and (Yi == Y) and
-          (Staffed == false) and (Blocked == false)
+          (Staffed == 0) and (Blocked == false)
         end, Map),
         
       case FreeSectors of

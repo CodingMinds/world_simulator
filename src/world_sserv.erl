@@ -212,15 +212,19 @@ handle_info({tcp, _Socket, "world load " ++ String},
             world_helper:send(Socket, "405 invalid position"),
             
             {noreply, State};
+          access_denied ->
+            world_helper:send(Socket, "403 access denied"),
+            
+            {noreply, State};
           map_full ->
             world_helper:send(Socket, "403 access denied"),
             
             {noreply, State};
-          _ ->
+          Reason ->
             world_helper:send(Socket, "500 server made a boo boo"),
             close_connection(State),
             
-            {stop, {error, unknown}, State}
+            {stop, {error, Reason}, State}
         end
     end
   end,

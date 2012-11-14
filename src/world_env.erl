@@ -396,7 +396,7 @@ handle_call({do, Action}, {Pid, _Tag},
         _ ->
           {reply, {error, command_unknown}, World}
       end
-  end;
+  end.
 
 %%----------------------------------------------------------------------
 %% Function: handle_cast/2
