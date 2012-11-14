@@ -9,6 +9,7 @@ $(document).ready(function(){
 function activate(Pid) {
   activePid = Pid;
   refreshContent();
+  refreshWorldListing();
 }
 
 function refreshWorldListing() {
