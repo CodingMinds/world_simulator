@@ -250,7 +250,7 @@ ctrl port to get the whole environment.
 
 200 welcome in this [1-9]+x[1-9]+ world  
 200 good bye  
-201 success  
+201 success [.|O|F|*]{8}  
 202 food [0-9]+  
 203 blocked  
 204 staffed  

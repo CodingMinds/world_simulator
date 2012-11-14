@@ -383,8 +383,8 @@ code_change(_OldVersion, State, _Extra) -> {ok, State}.
 %% @private
 call_world(Socket, Command) ->
   case gen_server:call(world_env, {do, Command}) of
-    ok ->
-      world_helper:send(Socket, "201 success");
+    {ok, Environ} ->
+      world_helper:send(Socket, "201 success ~s", [Environ]);
     {environ, Environ} ->
       world_helper:send(Socket, "102 environ ~s", [Environ]);
     {food, Amount} ->

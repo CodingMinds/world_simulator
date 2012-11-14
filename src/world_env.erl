@@ -239,6 +239,33 @@ handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
 handle_call({do, Action}, {Pid, _Tag},
   World=#world{map=Map, agents=Agents}) ->
   %%--------------------------------------------------------------------
+  %% Anonymous function: fun/1
+  %% Purpose: Return the environ String for the position tuple
+  %% Args: Position as tuple {x, y}.
+  %% Returns: String
+  %%--------------------------------------------------------------------
+  GetEnvironString = fun({X, Y}) ->
+    [
+      world_helper:ascii_rep(
+        world_helper:get_sector(X,   Y-1, Map)),
+      world_helper:ascii_rep(
+        world_helper:get_sector(X+1, Y-1, Map)),
+      world_helper:ascii_rep(
+        world_helper:get_sector(X+1, Y,   Map)),
+      world_helper:ascii_rep(
+        world_helper:get_sector(X+1, Y+1, Map)),
+      world_helper:ascii_rep(
+        world_helper:get_sector(X,   Y+1, Map)),
+      world_helper:ascii_rep(
+        world_helper:get_sector(X-1, Y+1, Map)),
+      world_helper:ascii_rep(
+        world_helper:get_sector(X-1, Y,   Map)),
+      world_helper:ascii_rep(
+        world_helper:get_sector(X-1, Y-1, Map))
+    ]
+  end,
+  
+  %%--------------------------------------------------------------------
   %% Anonymous function: fun/2
   %% Purpose: Check if the applied sector is available for the client
   %%   and set the new position if possible
@@ -282,10 +309,12 @@ handle_call({do, Action}, {Pid, _Tag},
                   {CoordinatesNew, SectorNew#sector{staffed=true}}),
         NewWorld = World#world{map=NewMap2, agents=NewAgents},
         
+        Environ = GetEnvironString(CoordinatesNew),
+        
         world_helper:log(client, "Client ~w tried ~w: success",
           [Pid, CoordinatesNew]),
           
-        {reply, ok, NewWorld}
+        {reply, {ok, Environ}, NewWorld}
     end
   end,
   
@@ -329,24 +358,7 @@ handle_call({do, Action}, {Pid, _Tag},
               {reply, {error, bad_arg}, World}
           end;
         environ ->
-          Environ = [
-            world_helper:ascii_rep(
-              world_helper:get_sector(X,   Y-1, Map)),
-            world_helper:ascii_rep(
-              world_helper:get_sector(X+1, Y-1, Map)),
-            world_helper:ascii_rep(
-              world_helper:get_sector(X+1, Y,   Map)),
-            world_helper:ascii_rep(
-              world_helper:get_sector(X+1, Y+1, Map)),
-            world_helper:ascii_rep(
-              world_helper:get_sector(X,   Y+1, Map)),
-            world_helper:ascii_rep(
-              world_helper:get_sector(X-1, Y+1, Map)),
-            world_helper:ascii_rep(
-              world_helper:get_sector(X-1, Y,   Map)),
-            world_helper:ascii_rep(
-              world_helper:get_sector(X-1, Y-1, Map))
-          ],
+          Environ = GetEnvironString({X, Y}),
           
           {reply, {environ, Environ}, World};
         _ ->
