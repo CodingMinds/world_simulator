@@ -120,8 +120,13 @@ default_worlds() ->
   Options3 = #options{env_name="WOOD1", max_agents=1,
     allow_startposition=false},
   
+  Map4 = world_helper:ascii_to_map(".OOOF|.OOO.|.....|OO.OO"),
+  Options4 = #options{env_name="TOLMAN1", max_agents=1,
+    allow_startposition=true},
+  
   spawn_world([Map1, Options1]),
   spawn_world([Map2, Options2]),
   spawn_world([Map3, Options3]),
+  spawn_world([Map4, Options4]),
   
   ok.
