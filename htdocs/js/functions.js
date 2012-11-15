@@ -3,7 +3,7 @@ var activePid;
 $(document).ready(function(){
   setInterval(refreshContent, 1000);
   setInterval(refreshWorldListing, 10000);
-  setInterval(refreshPidListing, 10000);
+  setInterval(refreshPidListing, 1000);
   refreshWorldListing();
   refreshPidListing();
 });

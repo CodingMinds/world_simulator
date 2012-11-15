@@ -170,9 +170,11 @@ pids(SessionID, _Env, Input) ->
     Pid ->
       case gen_server:call(Pid, state) of
         {state, #world{agents=Agents}} ->
-          {_, Ret} = lists:foldl(fun({EPid, _Coordinates}, {I, Ret}) ->
-              {I+1, Ret ++ "*" ++ integer_to_list(I)
-                ++ "\t" ++ pid_to_list(EPid) ++ "\n"}
+          {_, Ret} = lists:foldl(fun({EPid, _Coordinates, Fitness},
+            {I, Ret}) ->
+              {I+1, Ret ++ "*" ++ integer_to_list(I) ++ "\t" ++
+              integer_to_list(Fitness) ++ "\t" ++ pid_to_list(EPid) ++
+              "\n"}
             end, {1, ""}, Agents),
           Ret;
         {error, Reason} ->
