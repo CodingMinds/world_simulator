@@ -49,6 +49,7 @@ the implementations.
 
 #### Server
 
+ * Implement Fitness
  * Add more logging within world_env.erl for multiple worlds
  * Improve line ending (add CR)
  * Replace PIDs with unique names or sthg like this. list_to_pid is only
@@ -162,8 +163,13 @@ options
 104 static food positions: true
 104 environment name: defaultMap
 104 allow start position: true
+104 initial fitness: 1000
+104 fitness reduction if agent not moved: 1
+104 fitness reduction if section blocked: 3
+104 fitness reduction if section staffed: 3
+104 fitness reduction if agent moved: 2
 104 EOL
-options 7 true false defaultMap true
+options 7 true false defaultMap true 1000 1 3 3 2
 201 success
 </pre>
 

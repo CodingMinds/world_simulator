@@ -220,7 +220,7 @@ free_sector(Map) ->
   
   case FreeSectors of
     [] ->
-      map_full;
+      {error, map_full};
     _ ->
       hd(FreeSectors)
   end.
@@ -268,7 +268,7 @@ consume_food({X, Y}, World=#world{map=Map, options=Options,
               
               % send broadcast to all clients
               % deactivated because it's deprecated
-              %lists:foreach(fun({Pid, _Coordinates}) ->
+              %lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
               %  gen_server:cast(Pid, world_changed)
               %end, Agents),
               
@@ -329,11 +329,18 @@ get_sector(X, Y, Map) ->
 %% @doc Translate a string to a new options record.
 ascii_to_options(OptionsString) ->
   Result = (catch case string:tokens(OptionsString, " ") of
-    [MaxAgents, RespawnFood, StaticFood, EName, AStartPosition] ->
+    [MaxAgents, RespawnFood, StaticFood, EName, AStartPosition,
+     InitialFitness, FitnessNotMoved, FitnessBlocked, FitnessStaffed,
+     FitnessMoved] ->
       MAgents = list_to_integer(MaxAgents),
       RFood = list_to_atom(RespawnFood),
       SFood = list_to_atom(StaticFood),
       AStartPos = list_to_atom(AStartPosition),
+      IFitness = list_to_integer(InitialFitness),
+      FNMoved = list_to_integer(FitnessNotMoved),
+      FBlocked = list_to_integer(FitnessBlocked),
+      FStaffed = list_to_integer(FitnessStaffed),
+      FMoved = list_to_integer(FitnessMoved),
       
       % ugly way to verify that the atoms are true or false
       % and the integer >= 0
@@ -346,7 +353,12 @@ ascii_to_options(OptionsString) ->
             respawn_food = RFood,
             static_food = SFood,
             env_name = EName,
-            allow_startposition = AStartPos
+            allow_startposition = AStartPos,
+            initial_fitness = IFitness,
+            fitness_nomove = FNMoved,
+            fitness_blocked = FBlocked,
+            fitness_staffed = FStaffed,
+            fitness_moved = FMoved
           };
         true ->
           {error, bad_arg}
@@ -380,7 +392,17 @@ options_to_ascii(Options) when is_record(Options, options) ->
     atom_to_list(Options#options.static_food),
   "environment name: " ++ Options#options.env_name,
   "allow start position: " ++
-    atom_to_list(Options#options.allow_startposition)
+    atom_to_list(Options#options.allow_startposition),
+  "initial fitness: " ++
+    integer_to_list(Options#options.initial_fitness),
+  "fitness reduction if agent not moved: " ++
+    integer_to_list(Options#options.fitness_nomove),
+  "fitness reduction if section blocked: " ++
+    integer_to_list(Options#options.fitness_blocked),
+  "fitness reduction if section staffed: " ++
+    integer_to_list(Options#options.fitness_staffed),
+  "fitness reduction if agent moved: " ++
+    integer_to_list(Options#options.fitness_moved)
   ].
 
 %%----------------------------------------------------------------------

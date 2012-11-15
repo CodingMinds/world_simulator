@@ -115,7 +115,7 @@ init([Map, Options]) when is_list(Map), is_record(Options, options) ->
 %%   Handle incoming interactions with the world.
 handle_call({map, Map}, _From, World=#world{agents=Agents})
   when is_list(Map) ->
-  lists:foreach(fun({Pid, _Coordinates}) ->
+  lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
       gen_server:cast(Pid, world_destroyed)
     end, Agents),
   NewWorld = World#world{map = Map, agents=[]},
@@ -142,7 +142,7 @@ handle_call({options, Options}, _From, World)
     string:join(AsciiOptions, "~n")),
   
   % send broadcast to all clients - deprecated
-  %lists:foreach(fun({Pid, _Coordinates}) ->
+  %lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
   %  gen_server:cast(Pid, world_changed)
   %end, Agents),
   
@@ -219,7 +219,8 @@ handle_call({birth, X, Y}, {Pid, _Tag},
                    Properties#sector{staffed=1+length(Agents)}}),
           
           NewWorld = World#world{map = NewMap,
-                     agents = Agents ++ [ {Pid, Coordinates} ]},
+                     agents = Agents ++ [ {Pid, Coordinates,
+                       Options#options.initial_fitness} ]},
            
            world_helper:log(client, "Client ~w entered world", [Pid]),
            
@@ -240,7 +241,7 @@ handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
     false ->
       Map;
     _ ->
-      {_Pid, Coordinates} = Agent,
+      {_Pid, Coordinates, _Fitness} = Agent,
       Result = lists:keyfind(Coordinates, 1, Map),
       case Result of
         false ->
@@ -254,7 +255,7 @@ handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
   % remove from agent list
   NewAgents = lists:keydelete(Pid, 1, Agents),
   
-  NewWorld = World#world{map=NewMap, agents = NewAgents},
+  NewWorld = World#world{map=NewMap, agents=NewAgents},
   
   world_helper:log(client, "Client ~w left world", [Pid]),
   
@@ -269,15 +270,16 @@ handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
 %%   {reply, {error, Reason}, #world}.
 %%----------------------------------------------------------------------
 handle_call({do, Action}, {Pid, _Tag},
-  World=#world{map=Map, agents=Agents}) ->
+  World=#world{map=Map, agents=Agents, options=Options}) ->
   %%--------------------------------------------------------------------
   %% Anonymous function: fun/1
   %% Purpose: Return the environ String for the position tuple on map
   %%   BaseMap
-  %% Args: Position as tuple {x, y} and the map as BaseMap.
+  %% Args: Position as tuple {x, y}, the BaseMap as map and Fitness.
   %% Returns: String
   %%--------------------------------------------------------------------
-  GetEnvironString = fun({X, Y}, BaseMap) ->
+  GetEnvironString = fun({X, Y}, BaseMap, Fitness) ->
+    integer_to_list(Fitness) ++ ":" ++
     [
       world_helper:ascii_rep(
         world_helper:get_sector(X,   Y-1, BaseMap)),
@@ -302,34 +304,59 @@ handle_call({do, Action}, {Pid, _Tag},
   %% Anonymous function: fun/2
   %% Purpose: Check if the applied sector is available for the client
   %%   and set the new position if possible
-  %% Args: Actual and target sections.
+  %% Args: Actual and target sections and actual Fitness of the Agent.
   %% Returns: {reply, ok, World} | {reply, {food, N}, World} | {reply,
   %%   {Error, Reason}, World}
   %%--------------------------------------------------------------------
   CheckAndApply = fun({CoordinatesNow, SectorNow},
-    {CoordinatesNew, SectorNew}) ->
+    {CoordinatesNew, SectorNew}, Fitness) ->
     if
+      CoordinatesNow == CoordinatesNew ->
+        NewFitness = Fitness - Options#options.fitness_nomove,
+        NewAgents = lists:keyreplace(Pid, 1, Agents,
+          {Pid, CoordinatesNew, NewFitness}),
+        NewWorld = World#world{agents=NewAgents},
+        
+        Environ = GetEnvironString(CoordinatesNew, Map, NewFitness),
+        
+        world_helper:log(client, "Client ~w hasn't moved", [Pid]),
+          
+        {reply, {ok, Environ}, NewWorld};
+      
       SectorNew#sector.blocked == true ->
+        NewFitness = Fitness - Options#options.fitness_blocked,
+        NewAgents = lists:keyreplace(Pid, 1, Agents,
+          {Pid, CoordinatesNow, NewFitness}),
+        NewWorld = World#world{agents=NewAgents},
+        
         world_helper:log(client, "Client ~w tried ~w: blocked",
           [Pid, CoordinatesNew]),
         
-        {reply, {error, blocked}, World};
+        {reply, {error, blocked}, NewWorld};
+      
       SectorNew#sector.staffed /= 0 ->
+        NewFitness = Fitness - Options#options.fitness_staffed,
+        NewAgents = lists:keyreplace(Pid, 1, Agents,
+          {Pid, CoordinatesNow, NewFitness}),
+        NewWorld = World#world{agents=NewAgents},
+        
         world_helper:log(client, "Client ~w tried ~w: staffed",
           [Pid, CoordinatesNew]),
         
-        {reply, {error, staffed}, World};
+        {reply, {error, staffed}, NewWorld};
+      
       true ->
-        NewAgents = lists:keyreplace(Pid, 1, Agents,
-                    {Pid, CoordinatesNew}),
         NewMap = lists:keyreplace(CoordinatesNow, 1, Map,
-                 {CoordinatesNow, SectorNow#sector{staffed=0}}),
-        AgentPos = string:str(NewAgents, [{Pid, CoordinatesNew}]),
+          {CoordinatesNow, SectorNow#sector{staffed=0}}),
+        AgentPos = string:str(Agents, [{Pid, CoordinatesNow,
+          Fitness}]),
         NewMap2 = lists:keyreplace(CoordinatesNew, 1, NewMap,
-                  {CoordinatesNew, SectorNew#sector{staffed=AgentPos}}),
+          {CoordinatesNew, SectorNew#sector{staffed=AgentPos}}),
         
         if
           SectorNew#sector.food /= 0 ->
+            NewAgents = lists:keyreplace(Pid, 1, Agents,
+              {Pid, CoordinatesNew, Fitness + SectorNew#sector.food}),
             NewWorld = world_helper:consume_food(CoordinatesNew,
               World#world{map=NewMap2, agents=NewAgents}),
             
@@ -337,10 +364,15 @@ handle_call({do, Action}, {Pid, _Tag},
               [Pid, CoordinatesNew, SectorNew#sector.food]),
             
             {reply, {food, SectorNew#sector.food}, NewWorld};
+          
           true ->
+            NewFitness = Fitness - Options#options.fitness_moved,
+            NewAgents = lists:keyreplace(Pid, 1, Agents,
+              {Pid, CoordinatesNew, NewFitness}),
             NewWorld = World#world{map=NewMap2, agents=NewAgents},
             
-            Environ = GetEnvironString(CoordinatesNew, NewMap2),
+            Environ = GetEnvironString(CoordinatesNew, NewMap2,
+              NewFitness),
             
             world_helper:log(client, "Client ~w tried ~w: success",
               [Pid, CoordinatesNew]),
@@ -353,44 +385,42 @@ handle_call({do, Action}, {Pid, _Tag},
   case lists:keyfind(Pid, 1, Agents) of
     false ->
       {reply, {error, client_unknown}, World};
-    {_Pid, {X, Y}} ->
+    {_Pid, {X, Y}, Fitness} ->
       case Action of
         {move, Direction} ->
           CurrentSector = world_helper:get_sector(X, Y, Map),
           case Direction of
             0 ->
-              world_helper:log(client, "Client ~w hasn't moved",
-                [Pid]),
-              {reply, ok, World};
+              CheckAndApply(CurrentSector, CurrentSector, Fitness);
             1 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X, Y-1, Map));
+                world_helper:get_sector(X, Y-1, Map), Fitness);
             2 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X+1, Y-1, Map));
+                world_helper:get_sector(X+1, Y-1, Map), Fitness);
             3 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X+1, Y, Map));
+                world_helper:get_sector(X+1, Y, Map), Fitness);
             4 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X+1, Y+1, Map));
+                world_helper:get_sector(X+1, Y+1, Map), Fitness);
             5 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X, Y+1, Map));
+                world_helper:get_sector(X, Y+1, Map), Fitness);
             6 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X-1, Y+1, Map));
+                world_helper:get_sector(X-1, Y+1, Map), Fitness);
             7 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X-1, Y, Map));
+                world_helper:get_sector(X-1, Y, Map), Fitness);
             8 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X-1, Y-1, Map));
+                world_helper:get_sector(X-1, Y-1, Map), Fitness);
             _ ->
               {reply, {error, bad_arg}, World}
           end;
         environ ->
-          Environ = GetEnvironString({X, Y}, Map),
+          Environ = GetEnvironString({X, Y}, Map, Fitness),
           
           {reply, {environ, Environ}, World};
         _ ->
