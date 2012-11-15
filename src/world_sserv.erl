@@ -185,7 +185,7 @@ handle_info({tcp, _Socket, "quit" ++ _},
 %% Returns: {noreply, State}.
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "world load " ++ String},
-  State=#sstate{socket=Socket}) ->
+  State=#sstate{socket=Socket, environ=Env}) when is_atom(Env) ->
   Arguments = hd(string:tokens(String, "\r\n")),
   
   world_helper:log(info, "Socket ~w received world load ~s",
@@ -252,7 +252,7 @@ handle_info({tcp, _Socket, "world load " ++ String},
 %% Returns: {noreply, State}.
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "world list" ++ _},
-  State=#sstate{socket=Socket}) ->
+  State=#sstate{socket=Socket, environ=Env}) when is_atom(Env) ->
   
   Worlds = [{Pid, gen_server:call(Pid, info)} || {_,Pid,_,_}
     <- supervisor:which_children(world_envsup)],
@@ -370,7 +370,7 @@ handle_info({tcp, _Socket, "help move" ++ _},
 %% Returns: {noreply, State}.
 %%----------------------------------------------------------------------
 handle_info({tcp, _Socket, "help world" ++ _},
-  State=#sstate{socket=Socket}) ->
+  State=#sstate{socket=Socket, environ=Env}) when is_atom(Env) ->
   world_helper:send(Socket,
     "103 world load ID   loads the world behing id ID.~n" ++
     "103 world list      shows all available worlds.~n" ++
