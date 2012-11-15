@@ -150,6 +150,11 @@ tied to the map.
  * the name of the environment (default: unknown)
  * possibility to define the initial start position of the agents
    (default: yes)
+ * initial fitness (default: 1000)
+ * fitness reduction if agent has not moved (default: 1)
+ * fitness reduction if target section is blocked (default: 3)
+ * fitness reduction if target section is staffed (default: 3)
+ * fitness reduction if agent has moved (default: 2)
 
 All this options can changed on runtime if you are connected with the
 control port. The following command snippet show the active options and
