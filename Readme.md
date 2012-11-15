@@ -216,12 +216,12 @@ Escape character is '^]'.
 200 Speak, friend, and ente(r)
 world list
 105 ID, Name, X, Y, Agents, possible Agents
-105 <0.97.0> restrictiveDemo 9 9 0 2
-105 <0.99.0> WOOD1 55 15 0 1
-105 <0.95.0> defaultMap 5 5 0 4
+105 &lt;0.97.0&gt; restrictiveDemo 9 9 0 2
+105 &lt;0.99.0&gt; WOOD1 55 15 0 1
+105 &lt;0.95.0&gt; defaultMap 5 5 0 4
 105 EOL
-world load <0.95.0>
-200 welcome in this 5x5 world. Your ID is <0.56.0>
+world load &lt;0.95.0&gt;
+200 welcome in this 5x5 world. Your ID is &lt;0.56.0&gt;
 environ
 102 environ OO...OOO
 move 5
@@ -254,12 +254,12 @@ Escape character is '^]'.
 200 Speak, friend, and ente(r)
 world list
 105 ID, Name, X, Y, Agents, possible Agents
-105 <0.97.0> restrictiveDemo 9 9 0 2
-105 <0.99.0> WOOD1 55 15 0 1
-105 <0.95.0> defaultMap 5 5 2 4
+105 &lt;0.97.0&gt; restrictiveDemo 9 9 0 2
+105 &lt;0.99.0&gt; WOOD1 55 15 0 1
+105 &lt;0.95.0&gt; defaultMap 5 5 2 4
 105 EOL
-world load <0.95.0>
-107 World <0.95.0> loaded
+world load &lt;0.95.0&gt;
+107 World &lt;0.95.0&gt; loaded
 map
 100  *1 *2 .  .  . 
 100  .  .  .  .  . 
@@ -319,7 +319,7 @@ the ctrl port to get the whole environment. (deprecated)
 107 world ID destroyed
 
 200 Speak, friend, and ente(r)  
-200 welcome in this [1-9]+x[1-9]+ world. Your ID is ID  
+200 welcome in this [1-9]+x[1-9]+ world. Your ID is PID  
 200 good bye  
 201 success [.|O|F|*]{8}  
 202 food [0-9]+  
