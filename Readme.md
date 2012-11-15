@@ -314,12 +314,12 @@ the ctrl port to get the whole environment. (deprecated)
 105 ID, Name, X, Y, Agents, possible Agents  
 105 ID X Y Agents MaxAgents  
 105 EOL  
-106 world <ID> spawned  
-107 world <ID> loaded  
-107 world <ID> destroyed
+106 world ID spawned  
+107 world ID loaded  
+107 world ID destroyed
 
 200 Speak, friend, and ente(r)  
-200 welcome in this [1-9]+x[1-9]+ world. Your ID is <ID>  
+200 welcome in this [1-9]+x[1-9]+ world. Your ID is ID  
 200 good bye  
 201 success [.|O|F|*]{8}  
 202 food [0-9]+  
@@ -342,8 +342,8 @@ the ctrl port to get the whole environment. (deprecated)
 
 world list  
 world spawn [ASCII_REPRESENTATION]  
-world load <ID>  
-world destroy <ID>
+world load ID  
+world destroy ID
 
 map [ASCII_REPRESENTATION]  
 options [OPTIONS ..]  
@@ -355,7 +355,7 @@ quit
 #### Client
 
 world list  
-world load <ID> [X Y]  
+world load ID [X Y]  
 move [0-8]  
 environ  
 help [COMMAND]
