@@ -179,8 +179,7 @@ options 7 true false defaultMap true 1000 1 3 3 2
 </pre>
 
 Notice: There are more options planed. E.g. the amount of food if an
-agent enters a food section, the amount of start energy of new clients,
-the amount of energy client interactions cost, etc..
+agent enters a food section, etc..
 
 ## Example Usage
 
@@ -306,17 +305,17 @@ the ctrl port to get the whole environment. (deprecated)
 #### Sever
 
 100 ASCII map representation  
-100 EOL
+100 EOL  
 101 world changed (deprecated)  
 102 environ [.|O|F|*]{8}  
 103 free text help replies  
 104 option listings  
-104 EOL
+104 EOL  
 105 ID, Name, X, Y, Agents, possible Agents  
 105 ID X Y Agents MaxAgents  
 105 EOL  
-106 world <ID> spawned
-107 world <ID> loaded
+106 world <ID> spawned  
+107 world <ID> loaded  
 107 world <ID> destroyed
 
 200 Speak, friend, and ente(r)  
@@ -333,7 +332,7 @@ the ctrl port to get the whole environment. (deprecated)
 
 400 unknown command  
 403 access denied  
-404 not found
+404 not found  
 405 invalid position
 
 500 sever made a boo boo  
