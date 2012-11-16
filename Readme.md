@@ -331,8 +331,8 @@ The amount of attempts will be printed to stdout.
 #### improved_agent.py
 
 A simple demo of a random acting agent which terminates if he found
-food. The agent loads the first possible world and interprets food and
-objects to improve his behaviour.  
+food. The agent loads the configured or first possible world and
+interprets food and objects to improve his behaviour.  
 The amount of attempts will be printed to stdout.
 
 #### guest_ui.php

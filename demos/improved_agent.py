@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 # A simple demo of a random acting agent which terminates if he found
-# food. The agent loads the first possible world and interprets food and
-# objects to improve his behaviour.
-# The amount of attempts will be printed to stdout
+# food. The agent loads the configured or first possible world and
+# interprets food and objects to improve his behaviour.
+# The amount of attempts will be printed to stdout.
 # 01.11.12 M. Bittorf <info@coding-minds.com>
 # 16.11.12 M. Bittorf <info@coding-minds.com> (updated)
 
@@ -15,6 +15,7 @@ import re
 # config
 host = 'localhost'
 port = 4567
+world = ''
 
 # static stuff
 representation = [".", "N", "NO", "O", "SO", "S", "SW", "W", "NW"]
@@ -48,15 +49,16 @@ try:
 		s.sendall("world list\r\n")
 		data = s.recv(1024) # read world list
 		match = re.findall(' <(.+?)> ', data)
+		if world:
+			match.insert(0, world)
 		if not match:
 			break
-		
-		for world in match:
-			s.sendall("world load <" + world + ">\r\n")
+		for w in match:
+			s.sendall("world load <" + w + ">\r\n")
 			sdata = s.recv(1024)
 			if "200" in sdata:
 				found = 1
-				print >> sys.stderr, "Use world <" + world + ">."
+				print >> sys.stderr, "Use world <" + w + ">."
 				break
 	if not found:
 		print >> sys.stderr, "No world available."
