@@ -49,7 +49,6 @@ the implementations.
 
 #### Server
 
- * Implement Fitness
  * Add more logging within world_env.erl for multiple worlds
  * Improve line ending (add CR)
  * Replace PIDs with unique names or sthg like this. list_to_pid is only
@@ -325,8 +324,8 @@ interact with the world.
 
 #### random_agent.py
 
-A simple demo of a random acting agent which terminates if the food is
-found.  
+A simple demo of a random acting agent which terminates if he found
+food. The agent loads the first possible world.  
 The amount of attempts will be printed to stdout.
 
 #### guest_ui.php
