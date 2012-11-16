@@ -163,19 +163,53 @@ random places.
 
 <pre>
 options
-104 max agents: 4
-104 respawn food: true
-104 static food positions: true
-104 environment name: defaultMap
-104 allow start position: true
-104 initial fitness: 1000
-104 fitness reduction if agent not moved: 1
-104 fitness reduction if section blocked: 3
-104 fitness reduction if section staffed: 3
-104 fitness reduction if agent moved: 2
+104 max agents (max_agents): 4
+104 respawn food (respawn_food): true
+104 static food positions (static_food): true
+104 environment name (env_name): defaultMap
+104 allow start position (allow_startposition): true
+104 initial fitness (initial_fitness): 1000
+104 fitness reduction if agent not moved (fitness_nomove): 1
+104 fitness reduction if section blocked (fitness_blocked): 3
+104 fitness reduction if section staffed (fitnes_staffed): 3
+104 fitness reduction if agent moved (fitness_moved): 2
+104 drop agents if their fitness reaches 0 (drop_agents): false
 104 EOL
-options 7 true false defaultMap true 1000 1 3 3 2
+options 7 true false defaultMap true 1000 1 3 3 2 false
 201 success
+</pre>
+
+It's also possible to change only a single option
+
+<pre>
+options
+104 max agents (max_agents): 4
+104 respawn food (respawn_food): true
+104 static food positions (static_food): true
+104 environment name (env_name): defaultMap
+104 allow start position (allow_startposition): true
+104 initial fitness (initial_fitness): 1000
+104 fitness reduction if agent not moved (fitness_nomove): 1
+104 fitness reduction if section blocked (fitness_blocked): 3
+104 fitness reduction if section staffed (fitnes_staffed): 3
+104 fitness reduction if agent moved (fitness_moved): 2
+104 drop agents if their fitness reaches 0 (drop_agents): false
+104 EOL
+options drop_agents true
+201 success
+options
+104 max agents (max_agents): 4
+104 respawn food (respawn_food): true
+104 static food positions (static_food): true
+104 environment name (env_name): defaultMap
+104 allow start position (allow_startposition): true
+104 initial fitness (initial_fitness): 1000
+104 fitness reduction if agent not moved (fitness_nomove): 1
+104 fitness reduction if section blocked (fitness_blocked): 3
+104 fitness reduction if section staffed (fitnes_staffed): 3
+104 fitness reduction if agent moved (fitness_moved): 2
+104 drop agents if their fitness reaches 0 (drop_agents): true
+104 EOL
 </pre>
 
 Notice: There are more options planed. E.g. the amount of food if an
@@ -307,7 +341,7 @@ the ctrl port to get the whole environment. (deprecated)
 100 ASCII map representation  
 100 EOL  
 101 world changed (deprecated)  
-102 environ [.|O|F|*]{8}  
+102 environ {.|O|F|*}^8  
 103 free text help replies  
 104 option listings  
 104 EOL  
@@ -321,7 +355,7 @@ the ctrl port to get the whole environment. (deprecated)
 200 Speak, friend, and ente(r)  
 200 welcome in this [1-9]+x[1-9]+ world. Your ID is PID  
 200 good bye  
-201 success [.|O|F|*]{8}  
+201 success [{.|O|F|*}^8]  
 202 food [0-9]+  
 203 blocked  
 204 staffed  

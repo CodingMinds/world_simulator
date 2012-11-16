@@ -30,6 +30,8 @@
 %%% get_sector(X, Y, Map)
 %%%   Get the sector on position X and Y of map Map. Return a blocked
 %%%   one if there is no sector on this position.
+%%% ascii_to_options(OptionString, Options)
+%%%   Translate a string to a new single options record entry.
 %%% ascii_to_options(OptionsString)
 %%%   Translate a string in a new options record.
 %%% options_to_ascii(Options)
@@ -51,8 +53,8 @@
 
 -export([ascii_to_world/1, ascii_to_map/1, map_to_ascii/1, map_size/1,
   birth_sector/3, free_sector/1, consume_food/2, ascii_rep/1,
-  get_sector/3, ascii_to_options/1, options_to_ascii/1, send/2, send/3,
-  log/2, log/3]).
+  get_sector/3, ascii_to_options/2, ascii_to_options/1,
+  options_to_ascii/1, send/2, send/3, log/2, log/3]).
 
 -include("world_records.hrl").
 
@@ -321,6 +323,93 @@ get_sector(X, Y, Map) ->
   end.
 
 %%----------------------------------------------------------------------
+%% Function: ascii_to_options/2
+%% Purpose: Translate a string to a new single options record entry.
+%% Args: An ASCII string which represents the new option.
+%% Returns: {ok, #options} | {error, Reason}
+%%----------------------------------------------------------------------
+%% @doc Translate a string to a new single options record entry.
+ascii_to_options(OptionString, Options) ->
+  CleanOptionString = hd(string:tokens(OptionString, "\r\n")),
+  Option = string:tokens(CleanOptionString, " "),
+  try
+    case length(Option) of
+      2 ->
+        case hd(Option) of
+          "max_agents" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            if
+              Opt < 0 ->
+                {error, bad_argument};
+              true ->
+                {ok, Options#options{max_agents=Opt}}
+            end;
+          "respawn_food" ->
+            Opt = list_to_atom(lists:nth(2, Option)),
+            if
+              (Opt /= true) and (Opt /= false) ->
+                {error, bad_argument};
+              true ->
+                {ok, Options#options{respawn_food=Opt}}
+            end;
+          "static_food" ->
+            Opt = list_to_atom(lists:nth(2, Option)),
+            if
+              (Opt /= true) and (Opt /= false) ->
+                {error, bad_argument};
+              true ->
+                {ok, Options#options{static_food=Opt}}
+            end;
+          "env_name" ->
+            Opt = list_to_atom(lists:nth(2, Option)),
+              {ok, Options#options{env_name=Opt}};
+          "allow_startposition" ->
+            Opt = list_to_atom(lists:nth(2, Option)),
+            if
+              (Opt /= true) and (Opt /= false) ->
+                {error, bad_argument};
+              true ->
+                {ok, Options#options{allow_startposition=Opt}}
+            end;
+          "initial_fitness" ->
+            Opt = list_to_atom(lists:nth(2, Option)),
+            if
+              Opt < 0 ->
+                {error, bad_argument};
+              true ->
+                {ok, Options#options{initial_fitness=Opt}}
+            end;
+          "fitness_nomove" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            {ok, Options#options{fitness_nomove=Opt}};
+          "fitness_blocked" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            {ok, Options#options{fitness_blocked=Opt}};
+          "fitness_staffed" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            {ok, Options#options{fitness_staffed=Opt}};
+          "fitness_moved" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            {ok, Options#options{fitness_moved=Opt}};
+          "drop_agents" ->
+            Opt = list_to_atom(lists:nth(2, Option)),
+            if
+              (Opt /= true) and (Opt /= false) ->
+                {error, bad_argument};
+              true ->
+                {ok, Options#options{drop_agents=Opt}}
+            end;
+          _ ->
+            {error, bad_argument}
+        end;
+      _ ->
+        {error, bad_argument_count}
+    end
+  catch
+    Exception:Reason -> {error, {exception, Exception, Reason}}
+  end.
+
+%%----------------------------------------------------------------------
 %% Function: ascii_to_options/1
 %% Purpose: Translate a string to a new options record.
 %% Args: An ASCII string which represents the new options.
@@ -331,7 +420,7 @@ ascii_to_options(OptionsString) ->
   Result = (catch case string:tokens(OptionsString, " ") of
     [MaxAgents, RespawnFood, StaticFood, EName, AStartPosition,
      InitialFitness, FitnessNotMoved, FitnessBlocked, FitnessStaffed,
-     FitnessMoved] ->
+     FitnessMoved, DropAgents] ->
       MAgents = list_to_integer(MaxAgents),
       RFood = list_to_atom(RespawnFood),
       SFood = list_to_atom(StaticFood),
@@ -341,13 +430,16 @@ ascii_to_options(OptionsString) ->
       FBlocked = list_to_integer(FitnessBlocked),
       FStaffed = list_to_integer(FitnessStaffed),
       FMoved = list_to_integer(FitnessMoved),
+      DAgents = list_to_atom(DropAgents),
       
       % ugly way to verify that the atoms are true or false
       % and the integer >= 0
       if
         MAgents < 0 ->
           {error, bad_arg};
-        RFood or SFood or AStartPos or true ->
+        IFitness < 0 ->
+          {error, bad_arg};
+        RFood or SFood or AStartPos or DAgents or true ->
           #options{
             max_agents = MAgents,
             respawn_food = RFood,
@@ -358,7 +450,8 @@ ascii_to_options(OptionsString) ->
             fitness_nomove = FNMoved,
             fitness_blocked = FBlocked,
             fitness_staffed = FStaffed,
-            fitness_moved = FMoved
+            fitness_moved = FMoved,
+            drop_agents = DAgents
           };
         true ->
           {error, bad_arg}
@@ -386,23 +479,28 @@ ascii_to_options(OptionsString) ->
 %% @doc Translate a option record into a list of ASCII representations.
 options_to_ascii(Options) when is_record(Options, options) ->
   [
-  "max agents: " ++ integer_to_list(Options#options.max_agents),
-  "respawn food: " ++ atom_to_list(Options#options.respawn_food),
-  "static food positions: " ++
+  "max agents (max_agents): " ++
+    integer_to_list(Options#options.max_agents),
+  "respawn food (respawn_food): " ++
+    atom_to_list(Options#options.respawn_food),
+  "static food positions (static_food): " ++
     atom_to_list(Options#options.static_food),
-  "environment name: " ++ Options#options.env_name,
-  "allow start position: " ++
+  "environment name (env_name): " ++
+    atom_to_list(Options#options.env_name),
+  "allow start position (allow_startposition): " ++
     atom_to_list(Options#options.allow_startposition),
-  "initial fitness: " ++
+  "initial fitness (initial_fitness): " ++
     integer_to_list(Options#options.initial_fitness),
-  "fitness reduction if agent not moved: " ++
+  "fitness reduction if agent not moved (fitness_nomove): " ++
     integer_to_list(Options#options.fitness_nomove),
-  "fitness reduction if section blocked: " ++
+  "fitness reduction if section blocked (fitness_blocked): " ++
     integer_to_list(Options#options.fitness_blocked),
-  "fitness reduction if section staffed: " ++
+  "fitness reduction if section staffed (fitness_staffed): " ++
     integer_to_list(Options#options.fitness_staffed),
-  "fitness reduction if agent moved: " ++
-    integer_to_list(Options#options.fitness_moved)
+  "fitness reduction if agent moved (fitness_moved): " ++
+    integer_to_list(Options#options.fitness_moved),
+  "drop agents if their fitness reaches 0 (drop_agents): " ++
+    atom_to_list(Options#options.drop_agents)
   ].
 
 %%----------------------------------------------------------------------

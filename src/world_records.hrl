@@ -4,19 +4,20 @@
 %%   max_agents: A integer (default is 0).
 %%   respawn_food: An atom (default is true).
 %%   static_food: An atom (default is true).
-%%   env_name: A string (default is "").
+%%   env_name: An atom (default is unknown).
 %%   allow_startposition: An atom (default is true).
 %%   initial_fitness: A integer (default is 1000).
 %%   fitness_nomove: A integer (default is 1).
 %%   fitness_blocked: A integer (default is 3).
 %%   fitness_staffed: A integer (default is 3).
 %%   fitness_moved: A integer (default is 2).
+%%   drop_agents: An atom (default: false).
 %%----------------------------------------------------------------------
 -record(options, {max_agents = 0, respawn_food = true,
-  static_food = true, env_name = "unknown",
+  static_food = true, env_name = unknown,
   allow_startposition = true, initial_fitness = 1000,
   fitness_nomove = 1, fitness_blocked = 3, fitness_staffed = 3,
-  fitness_moved = 2}).
+  fitness_moved = 2, drop_agents = false}).
 
 %%---------------------------------------------------------------------
 %% Data Type: world

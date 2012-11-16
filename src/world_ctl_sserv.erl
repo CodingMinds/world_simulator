@@ -306,12 +306,29 @@ handle_info({tcp, Socket, "options " ++ String},
   case catch hd(string:tokens(String, "\r\n")) of
     {'EXIT', _} ->
       world_helper:send(Socket, "300 bad argument");
-    OptionsString ->
-      case world_helper:ascii_to_options(OptionsString) of
-        {ok, Options} ->
-          call_world(Socket, {options, Options}, Env);
-        {error, _} ->
-          world_helper:send(Socket, "300 bad argument")
+    OptString ->
+      case length(string:tokens(OptString, " ")) of
+        2 -> % a single option
+          case catch gen_server:call(Env, options) of
+            {'EXIT', {noproc, _}} ->
+              world_helper:send(Socket, "404 not found");
+            {'EXIT', _Reason} ->
+              world_helper:send(Socket, "500 server made a boo boo");
+            {options, Options} ->
+              case world_helper:ascii_to_options(OptString, Options) of
+                {ok, NewOptions} ->
+                  call_world(Socket, {options, NewOptions}, Env);
+                {error, _} ->
+                  world_helper:send(Socket, "300 bad argument")
+              end
+          end;
+        _ -> % all options
+          case world_helper:ascii_to_options(OptString) of
+            {ok, Options} ->
+              call_world(Socket, {options, Options}, Env);
+            {error, _} ->
+              world_helper:send(Socket, "300 bad argument")
+          end
       end
   end,
   world_helper:log(info, "Ctl: Socket ~w received new options ~s",

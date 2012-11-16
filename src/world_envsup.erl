@@ -99,12 +99,12 @@ default_worlds() ->
   
   %% Default 5x5 environment.
   Map1 = world_helper:ascii_to_map(".....|.....|OO.OO|...OF|....."),
-  Options1 = #options{env_name="defaultMap", max_agents=4},
+  Options1 = #options{env_name=defaultMap, max_agents=4},
   
   %% Restrictive 9x9 environment
   Map2 = world_helper:ascii_to_map(".O.......|.O.OOOOO.|.O.OF....|"
     ".....OOOO|OOOO.....|FO.OOO.O.|.O.....O.|.O.OOOOO.|...O....."),
-  Options2 = #options{env_name="restrictiveDemo", max_agents=2,
+  Options2 = #options{env_name=restrictiveDemo, max_agents=2,
     allow_startposition=false},
   
   %% WOOD1 55x15
@@ -117,11 +117,11 @@ default_worlds() ->
   Wood1 = string:copies(WoodBlockRow, 3),
   
   Map3 = world_helper:ascii_to_map(Wood1),
-  Options3 = #options{env_name="WOOD1", max_agents=1,
+  Options3 = #options{env_name='WOOD1', max_agents=1,
     allow_startposition=false},
   
   Map4 = world_helper:ascii_to_map(".OOOF|.OOO.|.....|OO.OO"),
-  Options4 = #options{env_name="TOLMAN1", max_agents=1,
+  Options4 = #options{env_name='TOLMAN1', max_agents=1,
     allow_startposition=true},
   
   spawn_world([Map1, Options1]),
