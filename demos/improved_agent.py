@@ -11,11 +11,15 @@ import random
 import socket
 import sys
 import re
+import time
 
 # config
 host = 'localhost'
 port = 4567
 world = ''
+verbose = 0 # true / false
+infinite = 0 # true / false
+sleep = 0 # seconds
 
 # static stuff
 representation = [".", "N", "NO", "O", "SO", "S", "SW", "W", "NW"]
@@ -75,17 +79,30 @@ try:
 	s.sendall("environ\r\n")
 	data = s.recv(1024) #read environ
 	
-	while "food" not in data:
+	while 1:
 		counter+=1
+		
 		move = random.randint(1,8)
 		env = re.findall('[\.FO*]', data)
 		if "F" in env:
 			move = env.index("F") + 1
 		while env[move-1] == "O" or env[move-1] == "*":
 			move = random.randint(1,8)
-		#print representation[move]
+		
 		s.sendall("move " + str(move) + "\r\n")
 		data = s.recv(1024)
+		
+		if verbose:
+			print representation[move]
+			if "food" in data:
+				print data
+		if not infinite and "food" in data:
+			break
+		while not "201" in data and not "102" in data:
+			s.sendall("environ\r\n")
+			data = s.recv(1024)
+		if sleep:
+			time.sleep(sleep)
 	print counter
 except socket.error, msg:
 	print >> sys.stderr, "Failed to communicate with server."
