@@ -23,6 +23,7 @@ sleep = 0 # seconds
 
 # static stuff
 representation = [".", "N", "NO", "O", "SO", "S", "SW", "W", "NW"]
+reverse = [-1, 5, 6, 7, 8, 1, 2, 3, 4]
 
 # create an INET, STREAMing socket
 try:
@@ -49,24 +50,34 @@ try:
 	skip = 0
 	found = 0
 	
-	while "EOL" not in data:
-		s.sendall("world list\r\n")
+	# request world list
+	s.sendall("world list\r\n")
+	while "EOL" not in data: # until end of list
 		data = s.recv(1024) # read world list
-		match = re.findall(' <(.+?)> ', data)
+		match = re.findall(' <(.+?)> ', data) # extract all worlds
+		
+		# prepend configured world if set
 		if world:
 			match.insert(0, world)
+		
+		# is there a world ?
 		if not match:
 			break
+		
+		# try to load one of the worlds
 		for w in match:
 			s.sendall("world load <" + w + ">\r\n")
 			sdata = s.recv(1024)
-			if "200" in sdata:
+			if "200" in sdata: # great world is available
 				found = 1
 				print >> sys.stderr, "Use world <" + w + ">."
 				break
+	
+	# no world available oder usable
 	if not found:
 		print >> sys.stderr, "No world available."
 		sys.exit()
+# smthg bad hapend
 except socket.error, msg:
 	print >> sys.stderr, "Failed to communicate with server."
 	sys.exit()
@@ -75,35 +86,59 @@ except socket.error, msg:
 try:
 	data = ""
 	counter = 0
+	last_move = 0
 	
+	# get initial environ
 	s.sendall("environ\r\n")
-	data = s.recv(1024) #read environ
+	data = s.recv(1024)
 	
 	while 1:
 		counter+=1
 		
+		# cast of dice
 		move = random.randint(1,8)
+		
+		 # cleanup environ - we don't need the fitness value
 		env = re.findall('[\.FO*]', data)
+		
+		# catch the food if it's visible
 		if "F" in env:
 			move = env.index("F") + 1
+		
+		 # cast again if there are something block the path
 		while env[move-1] == "O" or env[move-1] == "*":
 			move = random.randint(1,8)
 		
+		# disallow to go back to previous position if there are other paths
+		senv = re.findall('[\.F]', data)
+		while len(senv) > 1 and reverse[last_move] == move:
+			move = random.randint(1,8)
+		
+		# do it !
 		s.sendall("move " + str(move) + "\r\n")
 		data = s.recv(1024)
+		last_move = move
 		
+		# a little bit verbosity
 		if verbose:
 			print representation[move]
 			if "food" in data:
 				print data
+		
+		# die after food consumption ?
 		if not infinite and "food" in data:
 			break
-		while not "201" in data and not "102" in data:
+		
+		# get new environ string if missing
+		while not "201" in data and not "102" in data: #
 			s.sendall("environ\r\n")
 			data = s.recv(1024)
+		
+		# should we pause a while ?
 		if sleep:
 			time.sleep(sleep)
 	print counter
+# smthg bad hapend
 except socket.error, msg:
 	print >> sys.stderr, "Failed to communicate with server."
 	sys.exit()
