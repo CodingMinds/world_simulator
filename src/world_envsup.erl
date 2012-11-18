@@ -72,7 +72,7 @@ init([]) ->
 %% Args: -
 %% Returns: {ok, Child} | {ok, Child, Info} | {error, Reason}
 %%----------------------------------------------------------------------
-%% @docCreates a new world which can be accessed trough the interfaces.
+%% @doc Creates a new world which can be accessed trough the interfaces.
 spawn_world() ->
   spawn_world([]).
 
@@ -83,7 +83,7 @@ spawn_world() ->
 %% Args: A list of AdditionalArguments which shall passed to the world.
 %% Returns: {ok, Child} | {ok, Child, Info} | {error, Reason}
 %%----------------------------------------------------------------------
-%% @docCreates a new world which can be accessed trough the interfaces.
+%% @doc Creates a new world which can be accessed trough the interfaces.
 spawn_world(AdditionalArguments) ->
   supervisor:start_child(?MODULE, [AdditionalArguments]).
 
