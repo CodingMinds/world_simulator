@@ -438,12 +438,12 @@ handle_call({do, Action}, {Pid, _Tag},
 %%   Only used to stop the environment
 handle_cast(stop, World=#world{agents=Agents}) ->
   % send broadcast to all clients
-  lists:foreach(fun({Pid, _Coordinates}) ->
+  lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
     gen_server:cast(Pid, world_destroyed)
   end, Agents),
   
   {stop, normal, World}.
-  
+
 %%----------------------------------------------------------------------
 %% Function: *
 %% Purpose: Dummy functions for the behaviour gen_server
