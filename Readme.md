@@ -368,7 +368,7 @@ the ctrl port to get the whole environment. (deprecated)
 205 failed
 
 300 bad argument  
-301 death (not yet implemented)
+301 dead
 
 400 unknown command  
 403 access denied  

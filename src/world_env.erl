@@ -38,12 +38,18 @@
 %%%   Interface for the behaviour gen_server.
 %%%   Add the agent behind pid From to the map. If X and Y /= -1 try to
 %%%   set the agent on position X,Y
+%%% handle_call(dead, From, World)
+%%%   Interface for the behaviour gen_server.
+%%%   Remove the agent behind pid From from the map.
 %%% handle_call({do, Action}, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Try to fulfill the requested Action.
-%%% handle_cast(death, From, World)
+%%% handle_call({drop, all},World)
 %%%   Interface for the behaviour gen_server.
-%%%   Remove the agent behind pid From from the map.
+%%%   Drops all agents from the map.
+%%% handle_call({drop, dead},World)
+%%%   Interface for the behaviour gen_server.
+%%%   Drops all dead agents from the map.
 %%% handle_cast(stop, From, World)
 %%%   Interface for the behaviour gen_server.
 %%%   Destroy the world.
@@ -234,28 +240,8 @@ handle_call({birth, X, Y}, {Pid, _Tag},
 %% Args: -
 %% Returns: {reply, ok, #world}.
 %%----------------------------------------------------------------------
-handle_call(death, {Pid, _Tag}, World=#world{map=Map, agents=Agents}) ->
-  % Free sector on map
-  Agent = lists:keyfind(Pid, 1, Agents),
-  NewMap = case Agent of
-    false ->
-      Map;
-    _ ->
-      {_Pid, Coordinates, _Fitness} = Agent,
-      Result = lists:keyfind(Coordinates, 1, Map),
-      case Result of
-        false ->
-          Map;
-        {_, Sector} ->
-          NewSector = {Coordinates, Sector#sector{staffed=0}},
-          lists:keyreplace(Coordinates, 1, Map, NewSector)
-      end
-  end,
-  
-  % remove from agent list
-  NewAgents = lists:keydelete(Pid, 1, Agents),
-  
-  NewWorld = World#world{map=NewMap, agents=NewAgents},
+handle_call(dead, {Pid, _Tag}, World) ->
+  NewWorld = remove_agent(Pid, World),
   
   world_helper:log(client, "Client ~w left world", [Pid]),
   
@@ -303,10 +289,9 @@ handle_call({do, Action}, {Pid, _Tag},
   %%--------------------------------------------------------------------
   %% Anonymous function: fun/2
   %% Purpose: Check if the applied sector is available for the client
-  %%   and set the new position if possible
+  %%   and set the new position if possible. Also recalculates fitness.
   %% Args: Actual and target sections and actual Fitness of the Agent.
-  %% Returns: {reply, ok, World} | {reply, {food, N}, World} | {reply,
-  %%   {Error, Reason}, World}
+  %% Returns: {Result, Fitness, World}
   %%--------------------------------------------------------------------
   CheckAndApply = fun({CoordinatesNow, SectorNow},
     {CoordinatesNew, SectorNew}, Fitness) ->
@@ -321,7 +306,7 @@ handle_call({do, Action}, {Pid, _Tag},
         
         world_helper:log(client, "Client ~w hasn't moved", [Pid]),
           
-        {reply, {ok, Environ}, NewWorld};
+        {{ok, Environ}, NewFitness, NewWorld};
       
       SectorNew#sector.blocked == true ->
         NewFitness = Fitness - Options#options.fitness_blocked,
@@ -332,7 +317,7 @@ handle_call({do, Action}, {Pid, _Tag},
         world_helper:log(client, "Client ~w tried ~w: blocked",
           [Pid, CoordinatesNew]),
         
-        {reply, {error, blocked}, NewWorld};
+        {{error, blocked}, NewFitness, NewWorld};
       
       SectorNew#sector.staffed /= 0 ->
         NewFitness = Fitness - Options#options.fitness_staffed,
@@ -343,7 +328,7 @@ handle_call({do, Action}, {Pid, _Tag},
         world_helper:log(client, "Client ~w tried ~w: staffed",
           [Pid, CoordinatesNew]),
         
-        {reply, {error, staffed}, NewWorld};
+        {{error, staffed}, NewFitness, NewWorld};
       
       true ->
         NewMap = lists:keyreplace(CoordinatesNow, 1, Map,
@@ -355,15 +340,16 @@ handle_call({do, Action}, {Pid, _Tag},
         
         if
           SectorNew#sector.food /= 0 ->
+            NewFitness = Fitness + SectorNew#sector.food,
             NewAgents = lists:keyreplace(Pid, 1, Agents,
-              {Pid, CoordinatesNew, Fitness + SectorNew#sector.food}),
+              {Pid, CoordinatesNew, NewFitness}),
             NewWorld = world_helper:consume_food(CoordinatesNew,
               World#world{map=NewMap2, agents=NewAgents}),
             
             world_helper:log(client, "Client ~w tried ~w: food ~B",
               [Pid, CoordinatesNew, SectorNew#sector.food]),
             
-            {reply, {food, SectorNew#sector.food}, NewWorld};
+            {{food, SectorNew#sector.food}, NewFitness, NewWorld};
           
           true ->
             NewFitness = Fitness - Options#options.fitness_moved,
@@ -377,7 +363,7 @@ handle_call({do, Action}, {Pid, _Tag},
             world_helper:log(client, "Client ~w tried ~w: success",
               [Pid, CoordinatesNew]),
               
-            {reply, {ok, Environ}, NewWorld}
+            {{ok, Environ}, NewFitness, NewWorld}
         end
     end
   end,
@@ -389,7 +375,7 @@ handle_call({do, Action}, {Pid, _Tag},
       case Action of
         {move, Direction} ->
           CurrentSector = world_helper:get_sector(X, Y, Map),
-          case Direction of
+          {Result, NewFitness, NewWorld} = case Direction of
             0 ->
               CheckAndApply(CurrentSector, CurrentSector, Fitness);
             1 ->
@@ -418,6 +404,14 @@ handle_call({do, Action}, {Pid, _Tag},
                 world_helper:get_sector(X-1, Y-1, Map), Fitness);
             _ ->
               {reply, {error, bad_arg}, World}
+          end,
+          
+          if
+            Options#options.drop_agents and (NewFitness =< 0) ->
+              NewWorld2 = remove_agent(Pid, NewWorld),
+              {reply, {error, dead}, NewWorld2};
+            true ->
+              {reply, Result, NewWorld}
           end;
         environ ->
           Environ = GetEnvironString({X, Y}, Map, Fitness),
@@ -426,7 +420,36 @@ handle_call({do, Action}, {Pid, _Tag},
         _ ->
           {reply, {error, command_unknown}, World}
       end
-  end.
+  end;
+
+%%----------------------------------------------------------------------
+%% Function: handle_call/3
+%% Purpose: Drops all agents from the map.
+%% Args: -
+%% Returns: {reply, ok, World}.
+%%----------------------------------------------------------------------
+handle_call({drop, all}, _From, World=#world{agents=Agents}) ->
+  % send broadcast to all clients
+  lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
+    gen_server:cast(Pid, dead)
+  end, Agents),
+  
+  {reply, ok, World};
+
+%%----------------------------------------------------------------------
+%% Function: handle_call/3
+%% Purpose: Drops all dead agents from the map.
+%% Args: -
+%% Returns: {reply, ok, World}.
+%%----------------------------------------------------------------------
+handle_call({drop, dead}, _From, World=#world{agents=Agents}) ->
+  lists:foreach(fun({Pid, _Coordintaes, _Fitness}) ->
+      gen_server:cast(Pid, dead)
+    end, lists:filter(fun({_Pid, _Coordintaes, Fitness}) ->
+        Fitness =< 0
+      end, Agents)),
+  
+  {reply, ok, World}.
 
 %%----------------------------------------------------------------------
 %% Function: handle_cast/2
@@ -458,3 +481,33 @@ handle_info(_Message, World) -> {noreply, World}.
 %% @doc Dummy function for the behaviour gen_server. Not used in this
 %% implementation
 code_change(_OldVersion, World, _Extra) -> {ok, World}.
+
+%%----------------------------------------------------------------------
+%% Function: remove_agent/2
+%% Purpose: Removes agent from given world and return the new one.
+%% Args: Pid as agent pid and World as world.
+%% Returns: #world.
+%%----------------------------------------------------------------------
+%% @doc Removes agent from given world
+remove_agent(Pid, World=#world{map=Map, agents=Agents}) ->
+  % Free sector on map
+  Agent = lists:keyfind(Pid, 1, Agents),
+  NewMap = case Agent of
+    false ->
+      Map;
+    _ ->
+      {_Pid, Coordinates, _Fitness} = Agent,
+      Result = lists:keyfind(Coordinates, 1, Map),
+      case Result of
+        false ->
+          Map;
+        {_, Sector} ->
+          NewSector = {Coordinates, Sector#sector{staffed=0}},
+          lists:keyreplace(Coordinates, 1, Map, NewSector)
+      end
+  end,
+  
+  % remove from agent list
+  NewAgents = lists:keydelete(Pid, 1, Agents),
+  
+  World#world{map=NewMap, agents=NewAgents}.

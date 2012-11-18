@@ -352,6 +352,34 @@ handle_info({tcp, _Socket, "options" ++ _},
 
 %%----------------------------------------------------------------------
 %% Function: handle_info/2
+%% Purpose: Handle tcp 'drop all' message. Only applicable if an
+%%   environment is connected.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, State}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "drop all" ++ _},
+  State=#sstate{socket=Socket, environ=Env}) when is_pid(Env) ->
+  call_world(Socket, {drop, all}, Env),
+  world_helper:log(info, "Ctl: Socket ~w received drop all", [Socket]),
+  
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
+%% Purpose: Handle tcp 'drop dead' message. Only applicable if an
+%%   environment is connected.
+%% Args: Socket package as tuple and server state as State
+%% Returns: {noreply, State}.
+%%----------------------------------------------------------------------
+handle_info({tcp, _Socket, "drop dead" ++ _},
+  State=#sstate{socket=Socket, environ=Env}) when is_pid(Env) ->
+  call_world(Socket, {drop, dead}, Env),
+  world_helper:log(info, "Ctl: Socket ~w received drop dead", [Socket]),
+  
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_info/2
 %% Purpose: Handle empty tcp messages and ignore them
 %% Args: Socket package as tuple and server state as State
 %% Returns: {noreply, State}.

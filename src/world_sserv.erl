@@ -15,12 +15,15 @@
 %%% handle_cast(accept, From, State)
 %%%   Interface for the behaviour gen_server.
 %%%   Informs the server to accept the incoming connection.
-%%% handle_cast(world_changed, From, State)
+%%% handle_cast(world_changed, State)
 %%%   Interface for the behaviour gen_server.
 %%%   The world has changed.
-%%% handle_cast(world_destroyed, From, State)
+%%% handle_cast(world_destroyed, State)
 %%%   Interface for the behaviour gen_server.
 %%%   The world was destroyed. Close the connection and Terminate.
+%%% handle_cast(dead, State)
+%%%   Interface for the behaviour gen_server.
+%%%   The client is dead. Close the connection and Terminate.
 %%% handle_info({tcp, Socket, "quit" ++ _}
 %%%   Interface for the behaviour gen_server.
 %%%   Handle tcp 'quit' messages.
@@ -158,6 +161,18 @@ handle_cast(world_changed, State = #sstate{socket=Socket}) ->
 %%----------------------------------------------------------------------
 handle_cast(world_destroyed, State = #sstate{socket=Socket}) ->
   world_helper:send(Socket, "501 world destroyed"),
+  close_connection(State),
+  
+  {stop, normal, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_cast/2
+%% Purpose: The client is dead. Close the connection and terminate.
+%% Args: -
+%% Returns: {stop, normal, State}
+%%----------------------------------------------------------------------
+handle_cast(dead, State = #sstate{socket=Socket}) ->
+  world_helper:send(Socket, "301 dead"),
   close_connection(State),
   
   {stop, normal, State}.
@@ -454,7 +469,7 @@ handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket,
   
   case is_process_alive(Env) of
     true ->
-      gen_server:call(Env, death);
+      gen_server:call(Env, dead);
     _ ->
       ok
   end,
@@ -487,7 +502,7 @@ handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket,
   
   case is_process_alive(Env) of
     true ->
-      gen_server:call(Env, death);
+      gen_server:call(Env, dead);
     _ ->
       ok
   end,
@@ -561,8 +576,9 @@ call_world(#sstate{socket=Socket, environ=Env}, Command) ->
       world_helper:send(Socket, "400 unknown command");
     {error, client_unknown} ->
       world_helper:send(Socket, "403 access denied");
-    {error, death} ->
-      world_helper:send(Socket, "301 death");
+    {error, dead} ->
+      gen_server:cast(self(), dead),
+      ok;
     {error, _Reason} ->
       world_helper:send(Socket, "500 server made a boo boo")
   end.
@@ -578,7 +594,7 @@ call_world(#sstate{socket=Socket, environ=Env}, Command) ->
 close_connection(#sstate{socket=Socket, environ=Env})
   when is_pid(Env) ->
   world_helper:send(Socket, "200 good bye"),
-  gen_server:call(Env, death),
+  gen_server:call(Env, dead),
   gen_tcp:close(Socket),
   world_helper:log(info, "Socket ~w closed", [Socket]);
 
