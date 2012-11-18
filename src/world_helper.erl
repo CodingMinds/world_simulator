@@ -372,7 +372,7 @@ ascii_to_options(OptionString, Options) ->
                 {ok, Options#options{allow_startposition=Opt}}
             end;
           "initial_fitness" ->
-            Opt = list_to_atom(lists:nth(2, Option)),
+            Opt = list_to_integer(lists:nth(2, Option)),
             if
               Opt < 0 ->
                 {error, bad_argument};
