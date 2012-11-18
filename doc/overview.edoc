@@ -4,10 +4,11 @@
 @copyright 2012 M. Bittorf
 @version 0.4.0
 @title Code documentation of the world application
-@doc `world' is a simple world which is based on the style of the WOOD1
-environment described from Wilson in "ZCS: A Zeroth Level Classifier
-System" (1994). Agents can connect with TCP sockets and explore it.
-Objects are encoded with the following ASCII symbols:
+@doc `world' is a system which provides some simple worlds which are
+based on the style of the WOOD1 environment described from Wilson in
+"ZCS: A Zeroth Level Classifier System" (1994). Agents can connect with
+TCP sockets to these worlds and explore them. Objects are encode with
+the following ASCII symbols:
 
 <ul>
 <li>. - Free space</li>
