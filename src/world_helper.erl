@@ -399,6 +399,14 @@ ascii_to_options(OptionString, Options) ->
               true ->
                 {ok, Options#options{drop_agents=Opt}}
             end;
+          "time_slice" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            if
+              Opt < 0 ->
+                {error, bad_argument};
+              true ->
+                {ok, Options#options{time_slice=Opt}}
+            end;
           _ ->
             {error, bad_argument}
         end;
@@ -420,7 +428,7 @@ ascii_to_options(OptionsString) ->
   Result = (catch case string:tokens(OptionsString, " ") of
     [MaxAgents, RespawnFood, StaticFood, EName, AStartPosition,
      InitialFitness, FitnessNotMoved, FitnessBlocked, FitnessStaffed,
-     FitnessMoved, DropAgents] ->
+     FitnessMoved, DropAgents, TimeSlice] ->
       MAgents = list_to_integer(MaxAgents),
       RFood = list_to_atom(RespawnFood),
       SFood = list_to_atom(StaticFood),
@@ -431,13 +439,16 @@ ascii_to_options(OptionsString) ->
       FStaffed = list_to_integer(FitnessStaffed),
       FMoved = list_to_integer(FitnessMoved),
       DAgents = list_to_atom(DropAgents),
+      TSlice = list_to_integer(TimeSlice),
       
       % ugly way to verify that the atoms are true or false
       % and the integer >= 0
       if
         MAgents < 0 ->
           {error, bad_arg};
-        IFitness < 0 ->
+        IFitness <= 0 ->
+          {error, bad_arg};
+        TSlice < 0 ->
           {error, bad_arg};
         RFood or SFood or AStartPos or DAgents or true ->
           #options{
@@ -451,7 +462,8 @@ ascii_to_options(OptionsString) ->
             fitness_blocked = FBlocked,
             fitness_staffed = FStaffed,
             fitness_moved = FMoved,
-            drop_agents = DAgents
+            drop_agents = DAgents,
+            time_slice = TSlice
           };
         true ->
           {error, bad_arg}
@@ -500,7 +512,9 @@ options_to_ascii(Options) when is_record(Options, options) ->
   "fitness reduction if agent moved (fitness_moved): " ++
     integer_to_list(Options#options.fitness_moved),
   "drop agents if their fitness reaches 0 (drop_agents): " ++
-    atom_to_list(Options#options.drop_agents)
+    atom_to_list(Options#options.drop_agents),
+  "time slice for interactions with the world (time_slice): " ++
+    integer_to_list(Options#options.time_slice)
   ].
 
 %%----------------------------------------------------------------------
