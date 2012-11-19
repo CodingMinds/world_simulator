@@ -537,7 +537,7 @@ send(Socket, Str) ->
 %% @doc Format message `Str' with arguments `Args' and send it to socket
 %%   `Socket'.
 send(Socket, Str, Args) ->
-  gen_tcp:send(Socket, io_lib:format(Str ++ "~n", Args)),
+  gen_tcp:send(Socket, io_lib:format(Str ++ "\r~n", Args)),
   inet:setopts(Socket, [{active, once}]),
   ok.
 

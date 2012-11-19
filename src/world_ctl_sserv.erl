@@ -253,8 +253,8 @@ handle_info({tcp, _Socket, "world list" ++ _},
         [Pid, Name, X, Y, Agents, MAgents])
     end, Worlds),
   
-  FormatedWorlds = "105 ID, Name, X, Y, Agents, possible Agents~n" ++
-    "105 " ++ string:join(AsciiWorlds, "~n105 ") ++ "~n105 EOL",
+  FormatedWorlds = "105 ID, Name, X, Y, Agents, possible Agents\r~n" ++
+    "105 " ++ string:join(AsciiWorlds, "\r~n105 ") ++ "\r~n105 EOL",
   world_helper:send(Socket, FormatedWorlds),
   
   world_helper:log(info, "Ctl: Socket ~w received world",
@@ -474,13 +474,13 @@ call_world(Socket, Command, Environment) ->
       world_helper:send(Socket, "201 success");
     {map, Map} ->
       AsciiRows = world_helper:map_to_ascii(Map),
-      AsciiMap = "100 " ++ string:join(AsciiRows, "~n100 ") ++
-        "~n100 EOL",
+      AsciiMap = "100 " ++ string:join(AsciiRows, "\r~n100 ") ++
+        "\r~n100 EOL",
       world_helper:send(Socket, AsciiMap);
     {options, Options} ->
       AsciiOptions = "104 " ++
-        string:join(world_helper:options_to_ascii(Options), "~n104 ") ++
-          "~n104 EOL",
+        string:join(world_helper:options_to_ascii(Options), "\r~n104 ") ++
+          "\r~n104 EOL",
       world_helper:send(Socket, AsciiOptions);
     {error, bad_arg} ->
       world_helper:send(Socket, "300 bad argument");

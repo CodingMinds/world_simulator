@@ -277,8 +277,8 @@ handle_info({tcp, _Socket, "world list" ++ _},
         [Pid, Name, X, Y, Agents, MAgents])
     end, Worlds),
   
-  FormatedWorlds = "105 ID, Name, X, Y, Agents, possible Agents~n" ++
-    "105 " ++ string:join(AsciiWorlds, "~n105 ") ++ "~n105 EOL",
+  FormatedWorlds = "105 ID, Name, X, Y, Agents, possible Agents\r~n" ++
+    "105 " ++ string:join(AsciiWorlds, "\r~n105 ") ++ "\r~n105 EOL",
   world_helper:send(Socket, FormatedWorlds),
   
   world_helper:log(info, "Socket ~w received world",
@@ -340,18 +340,18 @@ handle_info({tcp, _Socket, "help quit" ++ _},
 handle_info({tcp, _Socket, "help environ" ++ _},
   State=#sstate{socket=Socket, environ=Env}) when is_pid(Env) ->
   world_helper:send(Socket,
-    "103 environ shows the nearest environ.~n" ++
+    "103 environ shows the nearest environ.\r~n" ++
     "103 Returns a 8 character long string with ASCII " ++
-        "representations of the immediate neighbors.~n" ++
-    "103 Possible characters are:~n" ++
-    "103    .   Empty cell~n" ++
-    "103    O   A blocking object~n" ++
-    "103    F   Food~n" ++
-    "103    *   Another agent~n" ++
+        "representations of the immediate neighbors.\r~n" ++
+    "103 Possible characters are:\r~n" ++
+    "103    .   Empty cell\r~n" ++
+    "103    O   A blocking object\r~n" ++
+    "103    F   Food\r~n" ++
+    "103    *   Another agent\r~n" ++
     "103 The positions within the string corrspond with the mapping" ++
-        "of Wilsons WOOD1 environment~n" ++
-    "103    8 | 1 | 2~n" ++
-    "103    7 | # | 3~n" ++
+        "of Wilsons WOOD1 environment\r~n" ++
+    "103    8 | 1 | 2\r~n" ++
+    "103    7 | # | 3\r~n" ++
     "103    6 | 5 | 4"
   ),
   
@@ -366,13 +366,13 @@ handle_info({tcp, _Socket, "help environ" ++ _},
 handle_info({tcp, _Socket, "help move" ++ _},
   State=#sstate{socket=Socket, environ=Env}) when is_pid(Env) ->
   world_helper:send(Socket,
-    "103 move [0-8] moves the client to position N.~n" ++
+    "103 move [0-8] moves the client to position N.\r~n" ++
     "103 N must be a value from 0 to 8 and describes the direction " ++
         "relative to the actual position of the client. 0 means no " ++
-        "move.~n" ++
-    "103 The mapping is based on Wilsons WOOD1 environment~n" ++
-    "103    8 | 1 | 2~n" ++
-    "103    7 | 0 | 3~n" ++
+        "move.\r~n" ++
+    "103 The mapping is based on Wilsons WOOD1 environment\r~n" ++
+    "103    8 | 1 | 2\r~n" ++
+    "103    7 | 0 | 3\r~n" ++
     "103    6 | 5 | 4"
   ),
   
@@ -387,11 +387,11 @@ handle_info({tcp, _Socket, "help move" ++ _},
 handle_info({tcp, _Socket, "help world" ++ _},
   State=#sstate{socket=Socket, environ=Env}) when is_atom(Env) ->
   world_helper:send(Socket,
-    "103 world load ID   loads the world behing id ID.~n" ++
-    "103 world list      shows all available worlds.~n" ++
+    "103 world load ID   loads the world behing id ID.\r~n" ++
+    "103 world list      shows all available worlds.\r~n" ++
     "103 The resulting list contains the ID, the internal name, the " ++
       "biggest X and Y values, the actual and the maximal amount of " ++
-      "agents.~n" ++
+      "agents.\r~n" ++
     "103 A maximal amount of 0 should be interpreted als 'infinite'."
   ),
   
@@ -406,10 +406,10 @@ handle_info({tcp, _Socket, "help world" ++ _},
 handle_info({tcp, _Socket, "help" ++ _},
   State=#sstate{socket=Socket, environ=Env}) when is_pid(Env) ->
   world_helper:send(Socket,
-    "103 The most commonly used commands are:~n" ++
-    "103    help COMMAND      Print detailed help~n" ++
-    "103    move [0-8]        Move the client to position N~n" ++
-    "103    environ           Show the nearest environ~n" ++
+    "103 The most commonly used commands are:\r~n" ++
+    "103    help COMMAND      Print detailed help\r~n" ++
+    "103    move [0-8]        Move the client to position N\r~n" ++
+    "103    environ           Show the nearest environ\r~n" ++
     "103    quit              Leave this world"
   ),
   
@@ -424,10 +424,10 @@ handle_info({tcp, _Socket, "help" ++ _},
 handle_info({tcp, _Socket, "help" ++ _},
   State=#sstate{socket=Socket}) ->
   world_helper:send(Socket,
-    "103 The most commonly used commands are:~n" ++
-    "103    help COMMAND      Print detailed help~n" ++
-    "103    world list        List all available worlds~n" ++
-    "103    world load ID     Load the world behind ID~n" ++
+    "103 The most commonly used commands are:\r~n" ++
+    "103    help COMMAND      Print detailed help\r~n" ++
+    "103    world list        List all available worlds\r~n" ++
+    "103    world load ID     Load the world behind ID\r~n" ++
     "103    quit              Leave this world"
   ),
   
