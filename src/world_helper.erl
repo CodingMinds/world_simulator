@@ -446,7 +446,7 @@ ascii_to_options(OptionsString) ->
       if
         MAgents < 0 ->
           {error, bad_arg};
-        IFitness <= 0 ->
+        IFitness =< 0 ->
           {error, bad_arg};
         TSlice < 0 ->
           {error, bad_arg};
