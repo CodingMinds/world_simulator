@@ -50,14 +50,12 @@ the implementations.
 #### Server
 
  * Add more logging within world_env.erl for multiple worlds
- * Improve line ending (add CR)
  * Replace PIDs with unique names or sthg like this. list_to_pid is only
    for debugging purposes and erlang interna.
 
 #### Client demos
 
-  * Implement handling of multiple worlds/environments
-  * Improve demo clients and build more
+  * Build clients which correspond with the script
 
 ## Logical Structure
 <pre>
@@ -154,6 +152,8 @@ tied to the map.
  * fitness reduction if target section is blocked (default: 3)
  * fitness reduction if target section is staffed (default: 3)
  * fitness reduction if agent has moved (default: 2)
+ * drop agents if their fitness reaches 0 (default: false)
+ * time slice for interactions with the world (default: 0)
 
 All this options can changed on runtime if you are connected with the
 control port. The following command snippet show the active options and
@@ -173,8 +173,9 @@ options
 104 fitness reduction if section staffed (fitnes_staffed): 3
 104 fitness reduction if agent moved (fitness_moved): 2
 104 drop agents if their fitness reaches 0 (drop_agents): false
+104 time slice for interactions with the world (time_slice): 0
 104 EOL
-options 7 true false defaultMap true 1000 1 3 3 2 false
+options 7 true false defaultMap true 1000 1 3 3 2 false 0
 201 success
 </pre>
 
@@ -193,6 +194,7 @@ options
 104 fitness reduction if section staffed (fitnes_staffed): 3
 104 fitness reduction if agent moved (fitness_moved): 2
 104 drop agents if their fitness reaches 0 (drop_agents): false
+104 time slice for interactions with the world (time_slice): 0
 104 EOL
 options drop_agents true
 201 success
@@ -208,6 +210,7 @@ options
 104 fitness reduction if section staffed (fitnes_staffed): 3
 104 fitness reduction if agent moved (fitness_moved): 2
 104 drop agents if their fitness reaches 0 (drop_agents): true
+104 time slice for interactions with the world (time_slice): 0
 104 EOL
 </pre>
 
@@ -234,8 +237,12 @@ $ make
 
 #### Running
 
-To start the application start an erlang shell in the directory ebin and
-enter
+To start the application start an erlang shell in the root of the
+project directory
+```sh
+erl -pa ebin/
+```
+and enter
 ```erlang
 1> application:start(world).
 ```
@@ -387,7 +394,8 @@ world destroy ID
 
 map [ASCII_REPRESENTATION]  
 options [OPTIONS ..]  
-kill all (not yet implemented)  
+drop dead  
+drop all  
 shutdown (not yet implemented)
 
 quit
