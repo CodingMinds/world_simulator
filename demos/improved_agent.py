@@ -16,7 +16,8 @@ import time
 # config
 host = 'localhost'
 port = 4567
-world = ''
+world = '' # without  <>
+startposition = '' # x y
 verbose = 0 # true / false
 infinite = 0 # true / false
 sleep = 0 # seconds
@@ -66,9 +67,14 @@ try:
 		
 		# try to load one of the worlds
 		for w in match:
-			s.sendall("world load <" + w + ">\r\n")
+			if verbose:
+				print "try world <" + w + "> " + startposition
+			if startpostion:
+				s.sendall("world load <" + w + "> " + startposition + "\r\n")
+			else:
+				s.sendall("world load <" + w + ">""\r\n")
 			sdata = s.recv(1024)
-			if "200" in sdata: # great world is available
+			if "200" in sdata: # great. world is available
 				found = 1
 				print >> sys.stderr, "Use world <" + w + ">."
 				break
@@ -105,7 +111,7 @@ try:
 		if "F" in env:
 			move = env.index("F") + 1
 		
-		 # cast again if there are something block the path
+		# cast again if there are something block the path
 		while env[move-1] == "O" or env[move-1] == "*":
 			move = random.randint(1,8)
 		
