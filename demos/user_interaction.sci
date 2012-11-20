@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //Client (user-input)
-//6.11.2012 André Freudenreich <andre.freudenreich@gmx.net>
+//20.11.2012 André Freudenreich <andre.freudenreich@gmx.net>
 //
 //A short Scilab program which connects to the server and let user 
 //interact with the world.
@@ -12,8 +12,9 @@ function[]=main()
     //config
     //open log file
     logfile=mopen('d:\log.txt','w');
-    url = "localhost";
-    port = 4567;
+    url = "coding-minds.com";
+    port = 6666;
+    world ="world load <0.95.0>";
     //intial connection
     strtoint_y = 0;
     strtoint_x = 0;
@@ -29,6 +30,9 @@ function[]=main()
         //to ensure output for
         output=SOCKET_read(1);
         disp(output)
+        output=SOCKET_query(1,world)
+        disp(output)
+        
         //extracting matrix size from output string
         strtoint_y=string2int(output,21);
         strtoint_x=string2int(output,23);
@@ -75,12 +79,14 @@ function[]=main()
                 //send "evirion" to server
                 //server returns the objects/environ surrounding the agent
                 output_environ=SOCKET_query(1,"environ");
+                
                 mputl("< "+output_environ, logfile);
                 //place objects and postion into the matrix 
                 [GRID1,GRID]=manipulator(GRID,output_environ,agentpos_y_x);
                     clc
                     mprintf("%s\n","exploring the world..")
                     disp(GRID1)
+                    //disp(output_environ)
                     mprintf("%s\n","user action: "+answer)
                     mprintf("%s\n","status reply: "+text_output)
             end
@@ -142,14 +148,26 @@ endfunction
 function[GRID1,GRID]=manipulator(GRID,output_environ,agentpos_y_x)
     agentpos_y = agentpos_y_x(1);
     agentpos_x = agentpos_y_x(2);
-    GRID(agentpos_y-1,agentpos_x)=part(output_environ,13);
-    GRID(agentpos_y-1,agentpos_x+1)=part(output_environ,14);
-    GRID(agentpos_y,agentpos_x+1)=part(output_environ,15);
-    GRID(agentpos_y+1,agentpos_x+1)=part(output_environ,16);
-    GRID(agentpos_y+1,agentpos_x)=part(output_environ,17);
-    GRID(agentpos_y+1,agentpos_x-1)=part(output_environ,18);
-    GRID(agentpos_y,agentpos_x-1)=part(output_environ,19);
-    GRID(agentpos_y-1,agentpos_x-1)=part(output_environ,20);
+    output_environ = strsplit(output_environ,':');
+    splited_string = output_environ(2,1)
+    [start,end,match]=regexp(splited_string,'/[FO\.0-9]+/')
+    n = size(match, "r")
+    environ="";
+    if(n>=1)
+        for y=1:1:n
+      environ = strcat([environ,match(y,1)]);
+        end
+    else
+        environ = match;
+    end
+    GRID(agentpos_y-1,agentpos_x)=part(environ,1);
+    GRID(agentpos_y-1,agentpos_x+1)=part(environ,2);
+    GRID(agentpos_y,agentpos_x+1)=part(environ,3);
+    GRID(agentpos_y+1,agentpos_x+1)=part(environ,4);
+    GRID(agentpos_y+1,agentpos_x)=part(environ,5);
+    GRID(agentpos_y+1,agentpos_x-1)=part(environ,6);
+    GRID(agentpos_y,agentpos_x-1)=part(environ,7);
+    GRID(agentpos_y-1,agentpos_x-1)=part(environ,8);
     GRID1 = GRID
     GRID1(agentpos_y,agentpos_x)='*';
 endfunction
@@ -223,6 +241,7 @@ function[agentpos_y_x,text_output]=status_verifier(agentpos_y_x,output_status,an
     if string_status_code == '203' then
         text_output = "path blocked";
     end
+
     if string_status_code == '204' then
         text_output = "path blocked by another agent";
     end
