@@ -147,11 +147,15 @@ tied to the map.
  * the name of the environment (default: unknown)
  * possibility to define the initial start position of the agents
    (default: yes)
- * initial fitness (default: 1000)
- * fitness reduction if agent has not moved (default: 1)
- * fitness reduction if target section is blocked (default: 3)
- * fitness reduction if target section is staffed (default: 3)
- * fitness reduction if agent has moved (default: 2)
+ * fitness if agent has not moved (default: 0)
+ * fitness if target section is blocked (default: 0)
+ * fitness if target section is staffed (default: 0)
+ * fitness if agent has moved (default: 0)
+ * initial energy (default: 1000)
+ * energy reduction if agent has not moved (default: 1)
+ * energy reduction if target section is blocked (default: 3)
+ * energy reduction if target section is staffed (default: 3)
+ * energy reduction if agent has moved (default: 2)
  * drop agents if their fitness reaches 0 (default: false)
  * time slice for interactions with the world (default: 0)
 
@@ -167,15 +171,19 @@ options
 104 static food positions (static_food): true
 104 environment name (env_name): defaultMap
 104 allow start position (allow_startposition): true
-104 initial fitness (initial_fitness): 1000
-104 fitness reduction if agent not moved (fitness_nomove): 1
-104 fitness reduction if section blocked (fitness_blocked): 3
-104 fitness reduction if section staffed (fitnes_staffed): 3
-104 fitness reduction if agent moved (fitness_moved): 2
+104 fitness if agent not moved (fitness_nomove): 0
+104 fitness if section blocked (fitness_blocked): 0
+104 fitness if section staffed (fitness_staffed): 0
+104 fitness if agent moved (fitness_moved): 0
+104 initial energy (initial_energy): 1000
+104 energy reduction if agent not moved (energy_nomove): 1
+104 energy reduction if section blocked (energy_blocked): 3
+104 energy reduction if section staffed (energy_staffed): 3
+104 energy reduction if agent moved (energy_moved): 2
 104 drop agents if their fitness reaches 0 (drop_agents): false
 104 time slice for interactions with the world (time_slice): 0
 104 EOL
-options 7 true false defaultMap true 1000 1 3 3 2 false 0
+options 7 true false defaultMap true 0 0 0 0 1000 1 3 3 2 false 0
 201 success
 </pre>
 
@@ -188,11 +196,15 @@ options
 104 static food positions (static_food): true
 104 environment name (env_name): defaultMap
 104 allow start position (allow_startposition): true
-104 initial fitness (initial_fitness): 1000
-104 fitness reduction if agent not moved (fitness_nomove): 1
-104 fitness reduction if section blocked (fitness_blocked): 3
-104 fitness reduction if section staffed (fitnes_staffed): 3
-104 fitness reduction if agent moved (fitness_moved): 2
+104 fitness if agent not moved (fitness_nomove): 0
+104 fitness if section blocked (fitness_blocked): 0
+104 fitness if section staffed (fitness_staffed): 0
+104 fitness if agent moved (fitness_moved): 0
+104 initial energy (initial_energy): 1000
+104 energy reduction if agent not moved (energy_nomove): 1
+104 energy reduction if section blocked (energy_blocked): 3
+104 energy reduction if section staffed (energy_staffed): 3
+104 energy reduction if agent moved (energy_moved): 2
 104 drop agents if their fitness reaches 0 (drop_agents): false
 104 time slice for interactions with the world (time_slice): 0
 104 EOL
@@ -204,11 +216,15 @@ options
 104 static food positions (static_food): true
 104 environment name (env_name): defaultMap
 104 allow start position (allow_startposition): true
-104 initial fitness (initial_fitness): 1000
-104 fitness reduction if agent not moved (fitness_nomove): 1
-104 fitness reduction if section blocked (fitness_blocked): 3
-104 fitness reduction if section staffed (fitnes_staffed): 3
-104 fitness reduction if agent moved (fitness_moved): 2
+104 fitness if agent not moved (fitness_nomove): 0
+104 fitness if section blocked (fitness_blocked): 0
+104 fitness if section staffed (fitness_staffed): 0
+104 fitness if agent moved (fitness_moved): 0
+104 initial energy (initial_energy): 1000
+104 energy reduction if agent not moved (energy_nomove): 1
+104 energy reduction if section blocked (energy_blocked): 3
+104 energy reduction if section staffed (energy_staffed): 3
+104 energy reduction if agent moved (energy_moved): 2
 104 drop agents if their fitness reaches 0 (drop_agents): true
 104 time slice for interactions with the world (time_slice): 0
 104 EOL
@@ -263,21 +279,21 @@ world list
 world load &lt;0.95.0&gt;
 200 welcome in this 5x5 world. Your ID is &lt;0.56.0&gt;
 environ
-102 environ OO...OOO
+102 environ 0:OO...OOO
 move 5
-201 success ...OOOOO
+201 success 0:...OOOOO
 move 3
-201 success ....OO..
+201 success 0:....OO..
 move 3
-201 success ...O.O..
+201 success 0:...O.O..
 move 5
-201 success ..OO..O.
+201 success 0:..OO..O.
 move 5
-201 success .OO....O
+201 success 0:.OO....O
 move 4
-201 success OF.OOO..
+201 success 0:OF.OOO..
 move 2
-202 food 1000
+202 food 1000:OOOO..OO
 quit
 200 good bye
 Connection closed by foreign host.
@@ -359,7 +375,7 @@ the ctrl port to get the whole environment. (deprecated)
 100 ASCII map representation  
 100 EOL  
 101 world changed (deprecated)  
-102 environ {.|O|F|*}^8  
+102 environ [0-9]+:[.|O|F|*i]{8,}  
 103 free text help replies  
 104 option listings  
 104 EOL  
@@ -373,10 +389,10 @@ the ctrl port to get the whole environment. (deprecated)
 200 Speak, friend, and ente(r)  
 200 welcome in this [1-9]+x[1-9]+ world. Your ID is PID  
 200 good bye  
-201 success [{.|O|F|*}^8]  
-202 food [0-9]+  
-203 blocked  
-204 staffed  
+201 success [0-9]+:[.|O|F|*i]{8,}  
+202 food [0-9]+:[.|O|F|*i]{8,}  
+203 blocked [0-9]+:[.|O|F|*i]{8,}  
+204 staffed [0-9]+:[.|O|F|*i]{8,}  
 205 failed
 
 300 bad argument  
@@ -393,12 +409,12 @@ the ctrl port to get the whole environment. (deprecated)
 #### Admin
 
 world list  
-world spawn [ASCII_REPRESENTATION]  
+world spawn ASCII_REPRESENTATION? 
 world load ID  
 world destroy ID
 
-map [ASCII_REPRESENTATION]  
-options [OPTIONS ..]  
+map ASCII_REPRESENTATION?  
+options (OPTIONS ..)?  
 drop dead  
 drop all  
 shutdown (not yet implemented)
@@ -408,7 +424,7 @@ quit
 #### Client
 
 world list  
-world load ID [X Y]  
+world load ID (X Y)?  
 move [0-8]  
 environ  
 help [COMMAND]

@@ -564,12 +564,12 @@ call_world(#sstate{socket=Socket, environ=Env}, Command) ->
       world_helper:send(Socket, "201 success ~s", [Environ]);
     {environ, Environ} ->
       world_helper:send(Socket, "102 environ ~s", [Environ]);
-    {food, Amount} ->
-      world_helper:send(Socket, "202 food ~B", [Amount]);
-    {error, blocked} ->
-      world_helper:send(Socket, "203 blocked");
-    {error, staffed} ->
-      world_helper:send(Socket, "204 staffed");
+    {food, Environ} ->
+      world_helper:send(Socket, "202 food ~s", [Environ]);
+    {error, blocked, Environ} ->
+      world_helper:send(Socket, "203 blocked ~s", [Environ]);
+    {error, staffed, Environ} ->
+      world_helper:send(Socket, "204 staffed ~s", [Environ]);
     {error, bad_arg} ->
       world_helper:send(Socket, "300 bad argument");
     {error, command_unknown} ->

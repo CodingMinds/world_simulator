@@ -121,7 +121,7 @@ init([Map, Options]) when is_list(Map), is_record(Options, options) ->
 %%   Handle incoming interactions with the world.
 handle_call({map, Map}, _From, World=#world{agents=Agents})
   when is_list(Map) ->
-  lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
+  lists:foreach(fun({Pid, _Coordinates, _Energy}) ->
       gen_server:cast(Pid, world_destroyed)
     end, Agents),
   NewWorld = World#world{map = Map, agents=[]},
@@ -148,7 +148,7 @@ handle_call({options, Options}, _From, World)
     string:join(AsciiOptions, "~n")),
   
   % send broadcast to all clients - deprecated
-  %lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
+  %lists:foreach(fun({Pid, _Coordinates, _Energy}) ->
   %  gen_server:cast(Pid, world_changed)
   %end, Agents),
   
@@ -226,7 +226,7 @@ handle_call({birth, X, Y}, {Pid, _Tag},
           
           NewWorld = World#world{map = NewMap,
                      agents = Agents ++ [ {Pid, Coordinates,
-                       Options#options.initial_fitness} ]},
+                       Options#options.initial_energy} ]},
            
            world_helper:log(client, "Client ~w entered world", [Pid]),
            
@@ -289,81 +289,91 @@ handle_call({do, Action}, {Pid, _Tag},
   %%--------------------------------------------------------------------
   %% Anonymous function: fun/2
   %% Purpose: Check if the applied sector is available for the client
-  %%   and set the new position if possible. Also recalculates fitness.
-  %% Args: Actual and target sections and actual Fitness of the Agent.
-  %% Returns: {Result, Fitness, World}
+  %%   and set the new position if possible. Also recalculates Energy.
+  %% Args: Actual and target sections and actual Energy of the Agent.
+  %% Returns: {Result, Energy, World}
   %%--------------------------------------------------------------------
   CheckAndApply = fun({CoordinatesNow, SectorNow},
-    {CoordinatesNew, SectorNew}, Fitness) ->
+    {CoordinatesNew, SectorNew}, Energy) ->
     if
       CoordinatesNow == CoordinatesNew ->
-        NewFitness = Fitness - Options#options.fitness_nomove,
+        NewEnergy = Energy - Options#options.energy_nomove,
         NewAgents = lists:keyreplace(Pid, 1, Agents,
-          {Pid, CoordinatesNew, NewFitness}),
+          {Pid, CoordinatesNew, NewEnergy}),
         NewWorld = World#world{agents=NewAgents},
         
-        Environ = GetEnvironString(CoordinatesNew, Map, NewFitness),
-        
         world_helper:log(client, "Client ~w hasn't moved", [Pid]),
-          
-        {{ok, Environ}, NewFitness, NewWorld};
+        
+        Environ = GetEnvironString(CoordinatesNew, Map,
+          Options#options.fitness_nomove),
+        
+        {{ok, Environ}, NewEnergy, NewWorld};
       
       SectorNew#sector.blocked == true ->
-        NewFitness = Fitness - Options#options.fitness_blocked,
+        NewEnergy = Energy - Options#options.energy_blocked,
         NewAgents = lists:keyreplace(Pid, 1, Agents,
-          {Pid, CoordinatesNow, NewFitness}),
+          {Pid, CoordinatesNow, NewEnergy}),
         NewWorld = World#world{agents=NewAgents},
         
         world_helper:log(client, "Client ~w tried ~w: blocked",
           [Pid, CoordinatesNew]),
         
-        {{error, blocked}, NewFitness, NewWorld};
+        Environ = GetEnvironString(CoordinatesNew, NewWorld#world.map,
+          Options#options.fitness_blocked),
+        
+        {{error, blocked, Environ}, NewEnergy, NewWorld};
       
       SectorNew#sector.staffed /= 0 ->
-        NewFitness = Fitness - Options#options.fitness_staffed,
+        NewEnergy = Energy - Options#options.energy_staffed,
         NewAgents = lists:keyreplace(Pid, 1, Agents,
-          {Pid, CoordinatesNow, NewFitness}),
+          {Pid, CoordinatesNow, NewEnergy}),
         NewWorld = World#world{agents=NewAgents},
         
         world_helper:log(client, "Client ~w tried ~w: staffed",
           [Pid, CoordinatesNew]),
         
-        {{error, staffed}, NewFitness, NewWorld};
+        Environ = GetEnvironString(CoordinatesNew, NewWorld#world.map,
+          Options#options.fitness_staffed),
+        
+        {{error, staffed, Environ}, NewEnergy, NewWorld};
       
       true ->
         NewMap = lists:keyreplace(CoordinatesNow, 1, Map,
           {CoordinatesNow, SectorNow#sector{staffed=0}}),
         AgentPos = string:str(Agents, [{Pid, CoordinatesNow,
-          Fitness}]),
+          Energy}]),
         NewMap2 = lists:keyreplace(CoordinatesNew, 1, NewMap,
           {CoordinatesNew, SectorNew#sector{staffed=AgentPos}}),
         
         if
           SectorNew#sector.food /= 0 ->
-            NewFitness = Fitness + SectorNew#sector.food,
+            NewEnergy = Energy + SectorNew#sector.food,
             NewAgents = lists:keyreplace(Pid, 1, Agents,
-              {Pid, CoordinatesNew, NewFitness}),
+              {Pid, CoordinatesNew, NewEnergy}),
             NewWorld = world_helper:consume_food(CoordinatesNew,
               World#world{map=NewMap2, agents=NewAgents}),
             
             world_helper:log(client, "Client ~w tried ~w: food ~B",
               [Pid, CoordinatesNew, SectorNew#sector.food]),
             
-            {{food, SectorNew#sector.food}, NewFitness, NewWorld};
+            Environ = GetEnvironString(CoordinatesNew, NewMap2,
+              SectorNew#sector.food),
+            
+            {{food, Environ}, NewEnergy, NewWorld};
           
           true ->
-            NewFitness = Fitness - Options#options.fitness_moved,
+            NewEnergy = Energy - Options#options.energy_moved,
             NewAgents = lists:keyreplace(Pid, 1, Agents,
-              {Pid, CoordinatesNew, NewFitness}),
+              {Pid, CoordinatesNew, NewEnergy}),
             NewWorld = World#world{map=NewMap2, agents=NewAgents},
-            
-            Environ = GetEnvironString(CoordinatesNew, NewMap2,
-              NewFitness),
             
             world_helper:log(client, "Client ~w tried ~w: success",
               [Pid, CoordinatesNew]),
-              
-            {{ok, Environ}, NewFitness, NewWorld}
+            
+            Environ = GetEnvironString(CoordinatesNew, NewMap2,
+              Options#options.fitness_moved),
+            
+            {{ok, Environ}, NewEnergy, NewWorld}
         end
     end
   end,
@@ -371,50 +381,50 @@ handle_call({do, Action}, {Pid, _Tag},
   case lists:keyfind(Pid, 1, Agents) of
     false ->
       {reply, {error, client_unknown}, World};
-    {_Pid, {X, Y}, Fitness} ->
+    {_Pid, {X, Y}, Energy} ->
       case Action of
         {move, Direction} ->
           CurrentSector = world_helper:get_sector(X, Y, Map),
-          {Result, NewFitness, NewWorld} = case Direction of
+          {Result, NewEnergy, NewWorld} = case Direction of
             0 ->
-              CheckAndApply(CurrentSector, CurrentSector, Fitness);
+              CheckAndApply(CurrentSector, CurrentSector, Energy);
             1 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X, Y-1, Map), Fitness);
+                world_helper:get_sector(X, Y-1, Map), Energy);
             2 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X+1, Y-1, Map), Fitness);
+                world_helper:get_sector(X+1, Y-1, Map), Energy);
             3 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X+1, Y, Map), Fitness);
+                world_helper:get_sector(X+1, Y, Map), Energy);
             4 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X+1, Y+1, Map), Fitness);
+                world_helper:get_sector(X+1, Y+1, Map), Energy);
             5 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X, Y+1, Map), Fitness);
+                world_helper:get_sector(X, Y+1, Map), Energy);
             6 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X-1, Y+1, Map), Fitness);
+                world_helper:get_sector(X-1, Y+1, Map), Energy);
             7 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X-1, Y, Map), Fitness);
+                world_helper:get_sector(X-1, Y, Map), Energy);
             8 ->
               CheckAndApply(CurrentSector,
-                world_helper:get_sector(X-1, Y-1, Map), Fitness);
+                world_helper:get_sector(X-1, Y-1, Map), Energy);
             _ ->
               {reply, {error, bad_arg}, World}
           end,
           
           if
-            Options#options.drop_agents and (NewFitness =< 0) ->
+            Options#options.drop_agents and (NewEnergy =< 0) ->
               NewWorld2 = remove_agent(Pid, NewWorld),
               {reply, {error, dead}, NewWorld2};
             true ->
               {reply, Result, NewWorld}
           end;
         environ ->
-          Environ = GetEnvironString({X, Y}, Map, Fitness),
+          Environ = GetEnvironString({X, Y}, Map, 0),
           
           {reply, {environ, Environ}, World};
         _ ->
@@ -430,7 +440,7 @@ handle_call({do, Action}, {Pid, _Tag},
 %%----------------------------------------------------------------------
 handle_call({drop, all}, _From, World=#world{agents=Agents}) ->
   % send broadcast to all clients
-  lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
+  lists:foreach(fun({Pid, _Coordinates, _Energy}) ->
     gen_server:cast(Pid, dead)
   end, Agents),
   
@@ -443,10 +453,10 @@ handle_call({drop, all}, _From, World=#world{agents=Agents}) ->
 %% Returns: {reply, ok, World}.
 %%----------------------------------------------------------------------
 handle_call({drop, dead}, _From, World=#world{agents=Agents}) ->
-  lists:foreach(fun({Pid, _Coordintaes, _Fitness}) ->
+  lists:foreach(fun({Pid, _Coordintaes, _Energy}) ->
       gen_server:cast(Pid, dead)
-    end, lists:filter(fun({_Pid, _Coordintaes, Fitness}) ->
-        Fitness =< 0
+    end, lists:filter(fun({_Pid, _Coordintaes, Energy}) ->
+        Energy =< 0
       end, Agents)),
   
   {reply, ok, World}.
@@ -461,7 +471,7 @@ handle_call({drop, dead}, _From, World=#world{agents=Agents}) ->
 %%   Only used to stop the environment
 handle_cast(stop, World=#world{agents=Agents}) ->
   % send broadcast to all clients
-  lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
+  lists:foreach(fun({Pid, _Coordinates, _Energy}) ->
     gen_server:cast(Pid, world_destroyed)
   end, Agents),
   
@@ -496,7 +506,7 @@ remove_agent(Pid, World=#world{map=Map, agents=Agents}) ->
     false ->
       Map;
     _ ->
-      {_Pid, Coordinates, _Fitness} = Agent,
+      {_Pid, Coordinates, _Energy} = Agent,
       Result = lists:keyfind(Coordinates, 1, Map),
       case Result of
         false ->

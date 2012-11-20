@@ -270,7 +270,7 @@ consume_food({X, Y}, World=#world{map=Map, options=Options,
               
               % send broadcast to all clients
               % deactivated because it's deprecated
-              %lists:foreach(fun({Pid, _Coordinates, _Fitness}) ->
+              %lists:foreach(fun({Pid, _Coordinates, _Energy}) ->
               %  gen_server:cast(Pid, world_changed)
               %end, Agents),
               
@@ -371,14 +371,26 @@ ascii_to_options(OptionString, Options) ->
               true ->
                 {ok, Options#options{allow_startposition=Opt}}
             end;
-          "initial_fitness" ->
+          "initial_energy" ->
             Opt = list_to_integer(lists:nth(2, Option)),
             if
               Opt < 0 ->
                 {error, bad_argument};
               true ->
-                {ok, Options#options{initial_fitness=Opt}}
+                {ok, Options#options{initial_energy=Opt}}
             end;
+          "energy_nomove" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            {ok, Options#options{energy_nomove=Opt}};
+          "energy_blocked" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            {ok, Options#options{energy_blocked=Opt}};
+          "energy_staffed" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            {ok, Options#options{energy_staffed=Opt}};
+          "energy_moved" ->
+            Opt = list_to_integer(lists:nth(2, Option)),
+            {ok, Options#options{energy_moved=Opt}};
           "fitness_nomove" ->
             Opt = list_to_integer(lists:nth(2, Option)),
             {ok, Options#options{fitness_nomove=Opt}};
@@ -427,17 +439,22 @@ ascii_to_options(OptionString, Options) ->
 ascii_to_options(OptionsString) ->
   Result = (catch case string:tokens(OptionsString, " ") of
     [MaxAgents, RespawnFood, StaticFood, EName, AStartPosition,
-     InitialFitness, FitnessNotMoved, FitnessBlocked, FitnessStaffed,
-     FitnessMoved, DropAgents, TimeSlice] ->
+     FitnessNotMoved, FitnessBlocked, FitnessStaffed, FitnessMoved,
+     InitialEnergy, EnergyNotMoved, EnergyBlocked, EnergyStaffed,
+     EnergyMoved, DropAgents, TimeSlice] ->
       MAgents = list_to_integer(MaxAgents),
       RFood = list_to_atom(RespawnFood),
       SFood = list_to_atom(StaticFood),
       AStartPos = list_to_atom(AStartPosition),
-      IFitness = list_to_integer(InitialFitness),
       FNMoved = list_to_integer(FitnessNotMoved),
       FBlocked = list_to_integer(FitnessBlocked),
       FStaffed = list_to_integer(FitnessStaffed),
       FMoved = list_to_integer(FitnessMoved),
+      IEnergy = list_to_integer(InitialEnergy),
+      ENMoved = list_to_integer(EnergyNotMoved),
+      EBlocked = list_to_integer(EnergyBlocked),
+      EStaffed = list_to_integer(EnergyStaffed),
+      EMoved = list_to_integer(EnergyMoved),
       DAgents = list_to_atom(DropAgents),
       TSlice = list_to_integer(TimeSlice),
       
@@ -446,7 +463,7 @@ ascii_to_options(OptionsString) ->
       if
         MAgents < 0 ->
           {error, bad_arg};
-        IFitness =< 0 ->
+        IEnergy =< 0 ->
           {error, bad_arg};
         TSlice < 0 ->
           {error, bad_arg};
@@ -457,11 +474,15 @@ ascii_to_options(OptionsString) ->
             static_food = SFood,
             env_name = EName,
             allow_startposition = AStartPos,
-            initial_fitness = IFitness,
             fitness_nomove = FNMoved,
             fitness_blocked = FBlocked,
             fitness_staffed = FStaffed,
             fitness_moved = FMoved,
+            initial_energy = IEnergy,
+            energy_nomove = ENMoved,
+            energy_blocked = EBlocked,
+            energy_staffed = EStaffed,
+            energy_moved = EMoved,
             drop_agents = DAgents,
             time_slice = TSlice
           };
@@ -501,16 +522,24 @@ options_to_ascii(Options) when is_record(Options, options) ->
     atom_to_list(Options#options.env_name),
   "allow start position (allow_startposition): " ++
     atom_to_list(Options#options.allow_startposition),
-  "initial fitness (initial_fitness): " ++
-    integer_to_list(Options#options.initial_fitness),
-  "fitness reduction if agent not moved (fitness_nomove): " ++
+  "fitness if agent not moved (fitness_nomove): " ++
     integer_to_list(Options#options.fitness_nomove),
-  "fitness reduction if section blocked (fitness_blocked): " ++
+  "fitness if section blocked (fitness_blocked): " ++
     integer_to_list(Options#options.fitness_blocked),
-  "fitness reduction if section staffed (fitness_staffed): " ++
+  "fitness if section staffed (fitness_staffed): " ++
     integer_to_list(Options#options.fitness_staffed),
-  "fitness reduction if agent moved (fitness_moved): " ++
+  "fitness if agent moved (fitness_moved): " ++
     integer_to_list(Options#options.fitness_moved),
+  "initial energy (initial_energy): " ++
+    integer_to_list(Options#options.initial_energy),
+  "energy reduction if agent not moved (energy_nomove): " ++
+    integer_to_list(Options#options.energy_nomove),
+  "energy reduction if section blocked (energy_blocked): " ++
+    integer_to_list(Options#options.energy_blocked),
+  "energy reduction if section staffed (energy_staffed): " ++
+    integer_to_list(Options#options.energy_staffed),
+  "energy reduction if agent moved (energy_moved): " ++
+    integer_to_list(Options#options.energy_moved),
   "drop agents if their fitness reaches 0 (drop_agents): " ++
     atom_to_list(Options#options.drop_agents),
   "time slice for interactions with the world (time_slice): " ++

@@ -6,19 +6,24 @@
 %%   static_food: An atom (default is true).
 %%   env_name: An atom (default is unknown).
 %%   allow_startposition: An atom (default is true).
-%%   initial_fitness: An integer (default is 1000).
-%%   fitness_nomove: An integer (default is 1).
-%%   fitness_blocked: An integer (default is 3).
-%%   fitness_staffed: An integer (default is 3).
-%%   fitness_moved: An integer (default is 2).
+%%   fitness_nomove: An integer (default is 0).
+%%   fitness_blocked: An integer (default is 0).
+%%   fitness_staffed: An integer (default is 0).
+%%   fitness_moved: An integer (default is 0).
+%%   initial_energy: An integer (default is 1000).
+%%   energy_nomove: An integer (default is 1).
+%%   energy_blocked: An integer (default is 3).
+%%   energy_staffed: An integer (default is 3).
+%%   energy_moved: An integer (default is 2).
 %%   drop_agents: An atom (default: false).
 %%   time_slice: An integer (default: 0).
 %%----------------------------------------------------------------------
 -record(options, {max_agents = 0, respawn_food = true,
   static_food = true, env_name = unknown,
-  allow_startposition = true, initial_fitness = 1000,
-  fitness_nomove = 1, fitness_blocked = 3, fitness_staffed = 3,
-  fitness_moved = 2, drop_agents = false, time_slice = 0}).
+  allow_startposition = true, fitness_nomove = 0, fitness_blocked = 0,
+  fitness_staffed = 0, fitness_moved = 0, initial_energy = 1000,
+  energy_nomove = 1, energy_blocked = 3, energy_staffed = 3,
+  energy_moved = 2, drop_agents = false, time_slice = 0}).
 
 %%---------------------------------------------------------------------
 %% Data Type: world
