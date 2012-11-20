@@ -318,7 +318,7 @@ handle_call({do, Action}, {Pid, _Tag},
         world_helper:log(client, "Client ~w tried ~w: blocked",
           [Pid, CoordinatesNew]),
         
-        Environ = GetEnvironString(CoordinatesNew, NewWorld#world.map,
+        Environ = GetEnvironString(CoordinatesNow, NewWorld#world.map,
           Options#options.fitness_blocked),
         
         {{error, blocked, Environ}, NewEnergy, NewWorld};
@@ -332,7 +332,7 @@ handle_call({do, Action}, {Pid, _Tag},
         world_helper:log(client, "Client ~w tried ~w: staffed",
           [Pid, CoordinatesNew]),
         
-        Environ = GetEnvironString(CoordinatesNew, NewWorld#world.map,
+        Environ = GetEnvironString(CoordinatesNow, NewWorld#world.map,
           Options#options.fitness_staffed),
         
         {{error, staffed, Environ}, NewEnergy, NewWorld};
