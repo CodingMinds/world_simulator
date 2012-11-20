@@ -342,6 +342,11 @@ food. The agent loads the configured or first possible world and
 interprets food and objects to improve his behaviour.  
 The amount of attempts will be printed to stdout.
 
+#### java_gui_client
+
+A java GUI client. The agent can be controlled manual or with a simple
+random based algorithm.
+
 #### guest_ui.php
 
 A simple demo of a php UI to show interested users what's going on. Uses
