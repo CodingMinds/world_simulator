@@ -69,10 +69,10 @@ try:
 		for w in match:
 			if verbose:
 				print "try world <" + w + "> " + startposition
-			if startpostion:
+			if startposition:
 				s.sendall("world load <" + w + "> " + startposition + "\r\n")
 			else:
-				s.sendall("world load <" + w + ">""\r\n")
+				s.sendall("world load <" + w + ">\r\n")
 			sdata = s.recv(1024)
 			if "200" in sdata: # great. world is available
 				found = 1
