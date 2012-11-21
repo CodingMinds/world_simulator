@@ -189,8 +189,6 @@ while -1 == iterations or iterations > 0:
 		data = s.recv(1024)
 		
 		while 1:
-			counter+=1
-			
 			# cleanup environ and separate fitness and environ
 			clean_data = ''.join(re.findall('[0-9]+:[\.FO*]+', data))
 			fitness, sep, env = clean_data.partition(":")
@@ -211,6 +209,7 @@ while -1 == iterations or iterations > 0:
 			# do it !
 			s.sendall("move " + str(action) + "\r\n")
 			data = s.recv(1024)
+			counter+=1
 			
 			# remember, remember, ..
 			last_classifiers.append((condition, action, quality))
