@@ -363,6 +363,13 @@ The amount of attempts will be printed to stdout.
 A java GUI client. The agent can be controlled manual or with a simple
 random based algorithm.
 
+#### lcs_dynamic.py
+A short dynamic learning classifier system where the function which
+applies the fitness values and the stored memory to the classifier list
+can be simple switched. Also some options like world, startposition and
+the size of the memory can be configured.  
+The amount of attempts per connection will be printed to stdout.
+
 #### guest_ui.php
 
 A simple demo of a php UI to show interested users what's going on. Uses
