@@ -40,11 +40,12 @@ reconnect_after_fitness = True # experimental ! (verbose: min 3)
 ###  classifiers (compare config variable memory_size). The first
 ###   element is the last used one, etc.
 def apply_fitness_algorithm(fitness, memory):
+	real_memory_size = len(memory)
 	# apply the fitness value
 	# based on the algorithm from http://www.uffmm.org/EoIESS-TH/gclt/node20.html
-	p = fitness / sum(range(1, memory_size))
+	p = fitness / sum(range(1, real_memory_size))
 	
-	for i in range(0, memory_size):
+	for i in range(0, real_memory_size):
 		try:
 			classifier_list.remove(memory[i])
 		except ValueError:
