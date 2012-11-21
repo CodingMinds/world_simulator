@@ -89,14 +89,14 @@ start_link(Arguments) ->
 %%   Initialize a new world with the optional map `Map' and an optional
 %%   options record `Options'.
 init([]) ->
-  world_helper:log(env, "World started with an empty map"),
+  world_helper:log(env, "World ~w started with an empty map", [self()]),
   {ok, #world{}};
 
 init([Map]) when is_list(Map) ->
   World = #world{map = Map},
   AsciiRows = world_helper:map_to_ascii(Map),
-  world_helper:log(env, "World started with map ~n" ++
-    string:join(AsciiRows, "~n")),
+  world_helper:log(env, "World ~w started with map ~n" ++
+    string:join(AsciiRows, "~n"), [self()]),
   
   {ok, World};
 
@@ -104,9 +104,9 @@ init([Map, Options]) when is_list(Map), is_record(Options, options) ->
   World = #world{map = Map, options = Options},
   AsciiRows = world_helper:map_to_ascii(Map),
   AsciiOptions = world_helper:options_to_ascii(Options),
-  world_helper:log(env, "World started with map ~n" ++
+  world_helper:log(env, "World ~w started with map ~n" ++
     string:join(AsciiRows, "~n") ++ "~n and options ~n" ++
-    string:join(AsciiOptions, "~n")),
+    string:join(AsciiOptions, "~n"), [self()]),
   
   {ok, World}.
 
@@ -127,8 +127,8 @@ handle_call({map, Map}, _From, World=#world{agents=Agents})
   NewWorld = World#world{map = Map, agents=[]},
   
   AsciiRows = world_helper:map_to_ascii(Map),
-  world_helper:log(env, "Loaded map ~n" ++
-    string:join(AsciiRows, "~n")),
+  world_helper:log(env, "World ~w loaded map ~n" ++
+    string:join(AsciiRows, "~n"), [self()]),
   
   {reply, ok, NewWorld};
 
@@ -144,8 +144,8 @@ handle_call({options, Options}, _From, World)
   NewWorld = World#world{options=Options},
   
   AsciiOptions = world_helper:options_to_ascii(Options),
-  world_helper:log(env, "Loaded options ~n" ++
-    string:join(AsciiOptions, "~n")),
+  world_helper:log(env, "World ~w loaded options ~n" ++
+    string:join(AsciiOptions, "~n"), [self()]),
   
   % send broadcast to all clients - deprecated
   %lists:foreach(fun({Pid, _Coordinates, _Energy}) ->
@@ -228,7 +228,8 @@ handle_call({birth, X, Y}, {Pid, _Tag},
                      agents = Agents ++ [ {Pid, Coordinates,
                        Options#options.initial_energy} ]},
            
-           world_helper:log(client, "Client ~w entered world", [Pid]),
+           world_helper:log(client, "Client ~w entered world ~w", [Pid,
+             self()]),
            
           {reply, ok, NewWorld}
       end
@@ -243,7 +244,7 @@ handle_call({birth, X, Y}, {Pid, _Tag},
 handle_call(dead, {Pid, _Tag}, World) ->
   NewWorld = remove_agent(Pid, World),
   
-  world_helper:log(client, "Client ~w left world", [Pid]),
+  world_helper:log(client, "Client ~w left world ~w", [Pid, self()]),
   
   {reply, ok, NewWorld};
 
@@ -419,6 +420,8 @@ handle_call({do, Action}, {Pid, _Tag},
           if
             Options#options.drop_agents and (NewEnergy =< 0) ->
               NewWorld2 = remove_agent(Pid, NewWorld),
+              world_helper:log(client, "Client ~w killed", [Pid]),
+              
               {reply, {error, dead}, NewWorld2};
             true ->
               {reply, Result, NewWorld}

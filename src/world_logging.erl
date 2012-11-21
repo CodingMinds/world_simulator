@@ -16,6 +16,12 @@
 %%% handle_cast({log, env, Msg}, State)
 %%%   Interface for the behaviour gen_server.
 %%%   Handles incoming log messages with environment informations.
+%%% handle_cast({log, error, Msg}, State)
+%%%   Interface for the behaviour gen_server.
+%%%   Handles incoming log messages with environment informations.
+%%% handle_cast({log, info, Msg}, State)
+%%%   Interface for the behaviour gen_server.
+%%%   Handles incoming log messages with environment informations.
 %%% handle_cast(Event, State)
 %%%   Handles unkown messages to flush event queue.
 %%%---------------------------------------------------------------------
@@ -51,9 +57,10 @@ start_link() ->
 init(_Argument) ->
   {ok, ClientLog} = application:get_env(log_client),
   {ok, EnvLog} = application:get_env(log_env),
+  {ok, ErrorLog} = application:get_env(log_error),
   {ok, InfoLog} = application:get_env(log_info),
   
-  {ok, {ClientLog, EnvLog, InfoLog}}.
+  {ok, {ClientLog, EnvLog, ErrorLog, InfoLog}}.
 
 %%----------------------------------------------------------------------
 %% Function: handle_cast/2
@@ -64,7 +71,7 @@ init(_Argument) ->
 %%----------------------------------------------------------------------
 %% @doc Interface for the behaviour gen_server.
 %%   Handles incoming log messages.
-handle_cast({log, client, Msg}, State = {ClientLog, _Env, _Info}) ->
+handle_cast({log, client, Msg}, State = {ClientLog, _E, _E, _I}) ->
   ok = log(ClientLog, Msg),
   {noreply, State};
 
@@ -75,8 +82,19 @@ handle_cast({log, client, Msg}, State = {ClientLog, _Env, _Info}) ->
 %% Args: -
 %% Returns: {noreply, State}
 %%----------------------------------------------------------------------
-handle_cast({log, env, Msg}, State = {_Client, EnvLog, _Info}) ->
+handle_cast({log, env, Msg}, State = {_C, EnvLog, _E, _I}) ->
   ok = log(EnvLog, Msg),
+  {noreply, State};
+
+%%----------------------------------------------------------------------
+%% Function: handle_cast/2
+%% Purpose: Handles incoming error messages with error informations and
+%%   write them down to the configured file.
+%% Args: -
+%% Returns: {noreply, State}
+%%----------------------------------------------------------------------
+handle_cast({log, error, Msg}, State = {_C, _E, ErrorLog, _I}) ->
+  ok = log(ErrorLog, Msg),
   {noreply, State};
 
 %%----------------------------------------------------------------------
@@ -86,7 +104,7 @@ handle_cast({log, env, Msg}, State = {_Client, EnvLog, _Info}) ->
 %% Args: -
 %% Returns: {noreply, State}
 %%----------------------------------------------------------------------
-handle_cast({log, info, Msg}, State = {_Client, _Env, InfoLog}) ->
+handle_cast({log, info, Msg}, State = {_C, _E, _E, InfoLog}) ->
   ok = log(InfoLog, Msg),
   {noreply, State};
 

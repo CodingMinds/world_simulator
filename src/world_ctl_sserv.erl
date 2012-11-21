@@ -132,7 +132,7 @@ handle_cast(accept, State = #sstate{socket=LSocket}) ->
       
       {noreply, State#sstate{socket=Socket}};
     {error, Reason} ->
-      world_helper:log(info, "Ctl: Socket connection error ~w",
+      world_helper:log(error, "Ctl: Socket connection error ~w",
         [Reason]),
       
       {stop, {error, Reason}, State}
@@ -312,7 +312,9 @@ handle_info({tcp, Socket, "options " ++ String},
           case catch gen_server:call(Env, options) of
             {'EXIT', {noproc, _}} ->
               world_helper:send(Socket, "404 not found");
-            {'EXIT', _Reason} ->
+            {'EXIT', Reason} ->
+              world_helper:log(error, "Ctl: Socket ~w environ error ~w",
+                [Socket, Reason]),
               world_helper:send(Socket, "500 server made a boo boo");
             {options, Options} ->
               case world_helper:ascii_to_options(OptString, Options) of
@@ -422,7 +424,7 @@ handle_info({tcp_closed, _Socket}, State=#sstate{socket=Socket}) ->
 %% Returns: {stop, normal, State}.
 %%----------------------------------------------------------------------
 handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
-  world_helper:log(info, "Ctl: Socket ~w closed", [Socket]),
+  world_helper:log(error, "Ctl: Socket ~w closed", [Socket]),
   
   {stop, normal, State};
 
@@ -433,7 +435,7 @@ handle_info({tcp_error, _Socket, _}, State=#sstate{socket=Socket}) ->
 %% Returns: {noreply, State}.
 %%----------------------------------------------------------------------
 handle_info(E, S) ->
-  world_helper:log(info, "Ctl: unexpected: ~p", [E]),
+  world_helper:log(error, "Ctl: unexpected: ~p", [E]),
   
   {noreply, S}.
 
@@ -486,8 +488,10 @@ call_world(Socket, Command, Environment) ->
       world_helper:send(Socket, "300 bad argument");
     {error, command_unknown} ->
       world_helper:send(Socket, "400 unknown command");
-    {error, _Reason} ->
-      world_helper:send(Socket, "500 server made a boo boo")
+    {error, Reason} ->
+      world_helper:send(Socket, "500 server made a boo boo"),      
+      world_helper:log(error, "Ctl: Socket ~w environ error ~w",
+        [Socket, Reason])
   end.
 
 %%----------------------------------------------------------------------

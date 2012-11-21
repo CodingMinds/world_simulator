@@ -49,7 +49,6 @@ the implementations.
 
 #### Server
 
- * Add more logging within world_env.erl for multiple worlds
  * Replace PIDs with unique names or sthg like this. list_to_pid is only
    for debugging purposes and erlang interna.
 

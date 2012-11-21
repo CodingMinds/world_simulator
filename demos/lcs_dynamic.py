@@ -20,12 +20,12 @@ from itertools import groupby
 ## config
 host = 'localhost'
 port = 4567
-world = '' # without <>
-startposition = '' # 'x y'
+world = '0.16160.6' # without <>
+startposition = '3 4' # 'x y'
 memory_size = 10
 iterations = 10 # -1 = infinite
 ignore_failed_iterations = True
-verbose = 0 # 0 - 5
+verbose = 1 # 0 - 5
 sleep = 0 # seconds
 reconnect_after_fitness = True # experimental ! (verbose: min 3)
 
