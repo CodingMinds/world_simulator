@@ -56,6 +56,8 @@ the implementations.
 #### Client demos
 
   * Build clients which correspond with the script
+  * Improve lcs_dynamic.py to build classifier list correct (diff.
+    qualitys). Also ad handling of wildcards.
 
 ## Logical Structure
 <pre>

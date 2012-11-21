@@ -22,9 +22,10 @@ port = 4567
 world = '' # without <>
 startposition = '' # x y
 memory_size = 10
-iterations = 10 # 0 = infinite
-verbose = 0 # 0 - 4
+iterations = 10 # -1 = infinite
+verbose = 0 # 0 - 5
 sleep = 0 # seconds
+reconnect_after_fitness = True # experimental ! (verbose: min 3)
 
 ### Essential algorithm
 ### Implement here how you would handle the fitness !
@@ -173,8 +174,19 @@ while -1 == iterations or iterations > 0:
 		while 1:
 			counter+=1
 			
-			# cleanup environ - we don't need the fitness value
-			env = re.findall('[\.FO*]', data)
+			# cleanup environ and separate fitness and environ
+			clean_data = ''.join(re.findall('[0-9]+:[\.FO*]+', data))
+			fitness, sep, env = clean_data.partition(":")
+			
+			# are you curious ?
+			if 4 <= verbose:
+				print fitness, env
+			
+			# task done ?
+			if int(fitness) > 0:
+				apply_fitness(int(fitness))
+				if reconnect_after_fitness:
+					break
 			
 			# choose classifier
 			condition, action, quality = select_classifier(env, classifier_list)
@@ -187,15 +199,8 @@ while -1 == iterations or iterations > 0:
 			last_classifiers.append((condition, action, quality))
 			
 			# are you curious ?
-			if 4 <= verbose:
+			if 5 <= verbose:
 				print representation[action]
-			
-			# task done ?
-			if "food" in data:
-				# apply fitness to memory
-				fitness = 1000
-				apply_fitness(fitness)
-				break
 			
 			# get new environ string if missing
 			while not ":" in data:
