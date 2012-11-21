@@ -24,6 +24,7 @@ world = '' # without <>
 startposition = '' # 'x y'
 memory_size = 10
 iterations = 10 # -1 = infinite
+ignore_failed_iterations = True
 verbose = 0 # 0 - 5
 sleep = 0 # seconds
 reconnect_after_fitness = True # experimental ! (verbose: min 3)
@@ -83,7 +84,7 @@ def apply_fitness(fitness):
 		return tuple(item[:2])
 	
 	classifier_list = [ [c, a, sum(q[2] for q in g)] for (c, a), g in groupby(sorted(classifier_list, key=pair), key=pair) ]
-			
+	
 	# sort it
 	classifier_list.sort(key=itemgetter(2), reverse=True)
 	
@@ -167,10 +168,16 @@ while -1 == iterations or iterations > 0:
 			print >> sys.stderr, "No world available."
 			s.close()
 			sys.exit()
-	# smthg bad hapend
+	# smthg bad hapend. fix it !
 	except socket.error, msg:
-		print >> sys.stderr, "Failed to communicate with server."
-		sys.exit()
+		print >> sys.stderr, "Failed to communicate with server while loading world."
+		print >> sys.stderr, "Still", iterations, "iterations pending."
+		print >> sys.stderr, "Cleanup and start next try."
+		classifier_list = list() # of tuples
+		last_classifiers = list() # of tuples
+		if ignore_failed_iterations:
+			iterations+=1
+		continue
 	
 	# go and search food
 	try:
@@ -222,10 +229,17 @@ while -1 == iterations or iterations > 0:
 				time.sleep(sleep)
 		
 		print counter
-	# smthg bad happend
+	# smthg bad happend. fix it !
 	except socket.error, msg:
-		print >> sys.stderr, "Failed to communicate with server."
-		sys.exit()
+		print >> sys.stderr, "Failed to communicate with server while searching food."
+		print >> sys.stderr, "Still", iterations, "iterations pending, this was guess", counter
+		print >> sys.stderr, "Cleanup and start next try."
+		classifier_list = list() # of tuples
+		last_classifiers = list() # of tuples
+		if ignore_failed_iterations:
+			iterations+=1
+		continue
+	
 # close connection
 	s.close()
 
