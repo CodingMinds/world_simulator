@@ -15,12 +15,13 @@ import sys
 import re
 import time
 from operator import itemgetter, attrgetter
+from itertools import groupby
 
 ## config
 host = 'localhost'
 port = 4567
 world = '' # without <>
-startposition = '' # x y
+startposition = '' # 'x y'
 memory_size = 10
 iterations = 10 # -1 = infinite
 verbose = 0 # 0 - 5
@@ -68,6 +69,7 @@ last_classifiers = list() # of tuples
 # applies the memory to the classifier_list. prepares the data and calls
 # the user implementation to apply the fitness.
 def apply_fitness(fitness):
+	global classifier_list
 	# extract the last used classifiers from memory
 	classifiers = last_classifiers[-memory_size::1]
 	classifiers.reverse()
@@ -75,6 +77,13 @@ def apply_fitness(fitness):
 	# call user function
 	apply_fitness_algorithm(fitness, classifiers)
 	
+	# merge duplicate condition/action pairs
+	# thx to Gribouillis (http://www.daniweb.com/software-development/python/threads/375081/merge-lists-when-certain-list-items-match#post1614203)
+	def pair(item):
+		return tuple(item[:2])
+	
+	classifier_list = [ [c, a, sum(q[2] for q in g)] for (c, a), g in groupby(sorted(classifier_list, key=pair), key=pair) ]
+			
 	# sort it
 	classifier_list.sort(key=itemgetter(2), reverse=True)
 	
