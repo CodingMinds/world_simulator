@@ -20,12 +20,19 @@ from itertools import groupby
 ## config
 host = 'localhost'
 port = 4567
-world = '0.16160.6' # without <>
-startposition = '3 4' # 'x y'
+
+world = '' # without <>
+startposition = '' # 'x y'
+
 memory_size = 10
-iterations = 10 # -1 = infinite
+ignore_repetitions = False
+initial_classifiers = list() # could be a list of tuples
+# like: ("OOFOOFOO", 3, 12)
+
+iterations = 100 # -1 = infinite
 ignore_failed_iterations = True
-verbose = 1 # 0 - 5
+
+verbose = 3 # 0 - 5 / 10
 sleep = 0 # seconds
 reconnect_after_fitness = True # experimental ! (verbose: min 3)
 
@@ -62,7 +69,7 @@ def apply_fitness_algorithm(fitness, memory):
 
 ## static stuff
 representation = [".", "N", "NO", "O", "SO", "S", "SW", "W", "NW"]
-classifier_list = list() # of tuples
+classifier_list = initial_classifiers
 last_classifiers = list() # of tuples
 
 ## function definitions
@@ -74,6 +81,10 @@ def apply_fitness(fitness):
 	# extract the last used classifiers from memory
 	classifiers = last_classifiers[-memory_size::1]
 	classifiers.reverse()
+	
+	# is there a memory ?
+	if len(classifiers) <= 0:
+		return
 	
 	# call user function
 	apply_fitness_algorithm(fitness, classifiers)
@@ -193,7 +204,7 @@ while -1 == iterations or iterations > 0:
 		print >> sys.stderr, "Failed to communicate with server while loading world."
 		print >> sys.stderr, "Still", iterations, "iterations pending."
 		print >> sys.stderr, "Cleanup and start next try."
-		classifier_list = list() # of tuples
+		classifier_list = initial_classifiers
 		last_classifiers = list() # of tuples
 		if ignore_failed_iterations:
 			iterations+=1
@@ -223,7 +234,7 @@ while -1 == iterations or iterations > 0:
 				print fitness, env
 			
 			# task done ?
-			if int(fitness) > 0:
+			if int(fitness) != 0:
 				apply_fitness(int(fitness))
 				if reconnect_after_fitness:
 					break
@@ -236,8 +247,18 @@ while -1 == iterations or iterations > 0:
 			data = s.recv(1024)
 			counter+=1
 			
+			# are you debugging smthg ?
+			if 10 <= verbose:
+				print "move " + str(action)
+				print data
+			
 			# remember, remember, ..
-			last_classifiers.append((condition, action, quality))
+			if ignore_repetitions and len(last_classifiers) > 0:
+				(last_c, last_a, last_q) = last_classifiers[-1]
+				if last_c != condition and last_a != action:
+					last_classifiers.append((condition, action, quality))
+			else:
+				last_classifiers.append((condition, action, quality))
 			
 			# are you curious ?
 			if 5 <= verbose:
@@ -263,7 +284,7 @@ while -1 == iterations or iterations > 0:
 		print >> sys.stderr, "Failed to communicate with server while searching food."
 		print >> sys.stderr, "Still", iterations, "iterations pending, this was guess", counter
 		print >> sys.stderr, "Cleanup and start next try."
-		classifier_list = list() # of tuples
+		classifier_list = initial_classifiers
 		last_classifiers = list() # of tuples
 		if ignore_failed_iterations:
 			iterations+=1
