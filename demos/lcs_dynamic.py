@@ -137,9 +137,17 @@ while -1 == iterations or iterations > 0:
 		
 		# request world list
 		s.sendall("world list\r\n")
+		if 10 <= verbose:
+			print "world list"
 		while "EOL" not in data: # until end of list
 			data = s.recv(1024) # read world list
-			match = re.findall(' <(.+?)> ', data) # extract all worlds
+			
+			# are you debugging smthg ?
+			if 10 <= verbose:
+				print data
+			
+			# extract all worlds
+			match = re.findall(' <(.+?)> ', data)
 			
 			# prepend configured world if set
 			if world:
@@ -155,9 +163,21 @@ while -1 == iterations or iterations > 0:
 					print "try world <" + w + "> " + startposition
 				if startposition:
 					s.sendall("world load <" + w + "> " + startposition + "\r\n")
+					# are you debugging smthg ?
+					if 10 <= verbose:
+						print "world load <" + w + "> " + startposition
 				else:
 					s.sendall("world load <" + w + ">\r\n")
+					# are you debugging smthg ?
+					if 10 <= verbose:
+						print "world load <" + w + ">"
+				
 				sdata = s.recv(1024)
+				
+				# are you debugging smthg ?
+				if 10 <= verbose:
+					print sdata
+				
 				if "200" in sdata: # great. world is available
 					found = 1
 					print >> sys.stderr, "Use world <" + w + ">."
@@ -187,6 +207,11 @@ while -1 == iterations or iterations > 0:
 		# get initial environ
 		s.sendall("environ\r\n")
 		data = s.recv(1024)
+		
+		# are you debugging smthg ?
+		if 10 <= verbose:
+			print "environ"
+			print data
 		
 		while 1:
 			# cleanup environ and separate fitness and environ
@@ -222,6 +247,11 @@ while -1 == iterations or iterations > 0:
 			while not ":" in data:
 				s.sendall("environ\r\n")
 				data = s.recv(1024)
+				
+				# are you debugging smthg ?
+				if 10 <= verbose:
+					print "environ"
+					print data
 			
 			# should we pause a while ?
 			if sleep:
@@ -242,7 +272,7 @@ while -1 == iterations or iterations > 0:
 # close connection
 	s.close()
 
-# a little bit verbosity
+# wanna see the results ?
 if verbose:
 	for condition, action, quality in classifier_list:
 		print condition, "\t", action, "\t", quality
