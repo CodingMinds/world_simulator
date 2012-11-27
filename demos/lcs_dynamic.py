@@ -25,6 +25,7 @@ world = '' # without <>
 startposition = '' # 'x y'
 
 memory_size = 10
+max_quality = 0 # 0 = disabled
 ignore_repetitions = False
 initial_classifiers = list() # could be a list of tuples
 # like: ("OOFOOFOO", 3, 12)
@@ -32,7 +33,7 @@ initial_classifiers = list() # could be a list of tuples
 iterations = 100 # -1 = infinite
 ignore_failed_iterations = True
 
-verbose = 3 # 0 - 5 / 10
+verbose = 1 # 0 - 5 / 10
 sleep = 0 # seconds
 reconnect_after_fitness = True # experimental ! (verbose: min 3)
 
@@ -94,7 +95,18 @@ def apply_fitness(fitness):
 	def pair(item):
 		return tuple(item[:2])
 	
-	classifier_list = [ [c, a, sum(q[2] for q in g)] for (c, a), g in groupby(sorted(classifier_list, key=pair), key=pair) ]
+	classifier_list = [ (c, a, sum(q[2] for q in g)) for (c, a), g in groupby(sorted(classifier_list, key=pair), key=pair) ]
+	
+	# apply max_quality option
+	if max_quality:
+		for (condition, action, quality) in classifier_list:
+			if quality > max_quality:
+				# are you debugging smthg ?
+				if 10 <= verbose:
+					print "max_quality reached"
+					print (condition, action, quality)
+				classifier_list.remove((condition, action, quality))
+				classifier_list.append((condition, action, max_quality))
 	
 	# sort it
 	classifier_list.sort(key=itemgetter(2), reverse=True)
