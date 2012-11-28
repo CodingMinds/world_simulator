@@ -152,7 +152,7 @@ def get_matchingset(environ):
 		SM = sum(map(lambda (c, a, s): s, match))
 		MSP = sum(map(lambda (c, a, s): s, classifier_list)) / len(classifier_list)
 		if SM < (Phi * MSP):
-			[new_classifier(environ, MSP)]
+			match = [new_classifier(environ, MSP)]
 		return match
 	
 	return [new_classifier(environ)]
@@ -164,18 +164,18 @@ def change_strength(fun, pop):
 	
 	for condition, action, strength in pop:
 		if (condition, action, strength) in classifier_list:
-			verified_strength = strength
+			classifier_list.remove((condition, action, strength))
+			classifier_list.append((condition, action, fun(strength)))
 		else:
 			classifiers = filter(lambda (c, a, s): c == condition and a == action, classifier_list)
-			if len(classifiers) > 1:
-				print >> sys.stderr, "Datastructure corrupted !"
-				sys.exit()
-			elif len(classifiers) < 1:
+			if len(classifiers) < 1: # if some old references occure
 				continue
-			c, a, verified_strength = classifiers[0]
-		
-		classifier_list.remove((condition, action, verified_strength))
-		classifier_list.append((condition, action, fun(verified_strength)))
+			
+			for (condition, action, strength) in classifiers:
+				classifier_list.remove((condition, action, strength))
+			
+			fixed_strength = sum(map(lambda (c, a, s): s, classifiers))
+			classifier_list.append((condition, action, fun(fixed_strength)))
 	
 	return map(lambda (c, a, s): (c, a, fun(s)), pop)
 
