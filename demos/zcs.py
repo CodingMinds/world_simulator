@@ -191,7 +191,8 @@ last_classifiers = list() # of tuples
 
 ## enter the challenge
 while -1 == iterations or iterations > 0:
-	iterations-=1
+	if 0 < iterations:
+		iterations-=1
 	
 	# create an INET, STREAMing socket
 	try:
