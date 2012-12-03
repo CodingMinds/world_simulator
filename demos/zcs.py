@@ -18,16 +18,16 @@ from operator import itemgetter, attrgetter
 from itertools import groupby
 
 ## Test environment configuration
-host = 'coding-minds.com'
-port = 6666
+host = 'localhost'
+port = 4567
 
-world = '0.100.0' # without <>
-startposition = '3 4' # 'x y'
+world = '' # without <>
+startposition = '' # 'x y'
 
 iterations = 10 # -1 = infinite
 ignore_failed_iterations = True
 
-verbose = 3 # 0 - 5 / 10
+verbose = 0 # 0 - 5 / 10
 sleep = 0 # seconds
 reconnect_after_fitness = True # experimental ! (verbose: min 3)
 ignore_repetitions = False
