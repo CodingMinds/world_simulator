@@ -18,16 +18,16 @@ from operator import itemgetter, attrgetter
 from itertools import groupby
 
 ## Test environment configuration
-host = 'localhost'
-port = 4567
+host = 'coding-minds.com'
+port = 6666
 
-world = '' # without <>
-startposition = '' # 'x y'
+world = '0.100.0' # without <>
+startposition = '3 4' # 'x y'
 
-iterations = 100 # -1 = infinite
+iterations = 10 # -1 = infinite
 ignore_failed_iterations = True
 
-verbose = 1 # 0 - 5 / 10
+verbose = 3 # 0 - 5 / 10
 sleep = 0 # seconds
 reconnect_after_fitness = True # experimental ! (verbose: min 3)
 ignore_repetitions = False
@@ -60,6 +60,7 @@ Phi = 0.5
 ## static stuff
 representation = [".", "N", "NO", "O", "SO", "S", "SW", "W", "NW"]
 possible_inputs = [".", "F", "O"]
+possible_alleles = [".", "F", "O", "#"]
 
 ## function definitions
 
@@ -83,6 +84,30 @@ def roulette_wheel(pop, inverse=False):
 		return wheel[random.randint(0,len(wheel)-1)]
 	else:
 		return False
+
+# add a classifier to classifier_list, merge with an already existing one and remove another one
+def add_classifier((condition, action, strength)):
+	global classifier_list
+	
+	classifiers = filter(lambda (c, a, s): c == condition and a == action, classifier_list)
+	
+	if len(classifiers) > 1:
+		print >> sys.stder, "datastructure corrupted !"
+		sus.exit()
+	
+	if len(classifiers) > 0:
+		fixed_strength = sum(map(lambda (c, a, s): s, classifiers)) + strength
+		for classifier in classifiers:
+			classifier_list.remove(classifier)
+		classifier_list.append((condition, action, fixed_strength))
+	else:
+		classifier = roulette_wheel(classifier_list, True)
+		if classifier:
+			classifier_list.remove(classifier)
+		
+		classifier_list.append((condition, action, strength))
+	
+	
 
 # set #'s based on P for environ
 def place_wildcards(environ):
@@ -114,10 +139,7 @@ def new_classifier(environ="random", strength=S0):
 	else:
 		environ = place_wildcards(environ)
 	
-	classifier = roulette_wheel(classifier_list, True)
-	if classifier:
-		classifier_list.remove(classifier)
-	classifier_list.append((environ, action, strength))
+	add_classifier((environ, action, strength))
 	
 	return environ, action, strength
 
@@ -181,9 +203,36 @@ def change_strength(fun, pop):
 
 # the genetic algorithm
 def run_ga():
-	# TODO !
-	# Chi, My, Rho
-	return False
+	global classifier_list
+	
+	(conditionA, actionA, strengthA) = classifierA = roulette_wheel(classifier_list)
+	(conditionB, actionB, strengthB) = classifierB = roulette_wheel([ c for c in classifier_list if c != classifierA ])
+	
+	# deduct parent strength
+	change_strength(lambda strength: strength * 0.5, [classifierA])
+	change_strength(lambda strength: strength * 0.5, [classifierB])
+	
+	# crossover
+	if random.random() <= Chi:
+		pos = random.randint(0, len(conditionA))
+		conditionA_new = conditionA[:pos] + conditionB[pos:]
+		conditionB = conditionB[:pos] + conditionA[pos:]
+		conditionA = conditionA_new
+		
+		strengthA = strengthB = (strengthA + strengthB) / 4
+	
+	# mutation
+	conditon_listA = list(conditionA)
+	conditon_listB = list(conditionB)
+	for i in range(0, len(conditon_listA)):
+		if random.random() <= My:
+			conditon_listA[i] = random.choice([ a for a in possible_alleles if a != conditon_listA[i] ])
+		if random.random() <= My:
+			conditon_listB[i] = random.choice([ a for a in possible_alleles if a != conditon_listB[i] ])
+		
+	# append new
+	add_classifier((''.join(conditon_listA), actionA, strengthA))
+	add_classifier((''.join(conditon_listB), actionB, strengthB))
 
 ## global data
 classifier_list = init_classifiers()
@@ -300,6 +349,10 @@ while -1 == iterations or iterations > 0:
 		data = ''.join(re.findall('[0-9]+:[\.FO*]+', data))
 		
 		while 1:
+			# run the GA
+			if Rho > 0 and (counter * Rho) % 2 == 0:
+				run_ga()
+			
 			# separate fitness and environ
 			fitness, sep, env = data.partition(":")
 			
