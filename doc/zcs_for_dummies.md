@@ -47,7 +47,9 @@ Von André Freudenreich und Michael Bittorf.
    In der "action set" Liste (A) werden jetzt all diejenigen "classifier" aus der ursprünglichen "matching" Liste (M) zusätzlich hinzugefügt, die dieselben Aktionen haben, wie der ausgewählte "classifier".
 
 
-   * Sollte kein "classifier" ausgewählt werden, oder es liegen die gesamt "strength/quality" aller "classifier" in der "matching" Liste (M) unter ''Phi (0.5) * durchschnitt von P'' wird die "covering" Operation ausgeführt: 
+   * Sollte kein "classifier" ausgewählt werden, oder es liegen die gesamt "strength/quality" 
+   aller "classifier" in der "matching" Liste (M) unter Phi (0.5) * durchschnitt von P
+   wird die "covering" Operation ausgeführt: 
    Dabei wird ein neuer "classifier" mit dem Sensor Input als "matching" String erstellt.
    Wobei einzelne Postionen des neuen "matching" Strings durch die Wahrscheinlichkeit P durch das "wildcard" Zeichen "#" ersetzt werden können. 
    Eine Aktion wird zufällig zugeordnet und die "quality" wird mit dem Durchschnittswert aller "classfier" in P gleichgesetzt.
@@ -61,14 +63,17 @@ Von André Freudenreich und Michael Bittorf.
 
 
  * Sollte die "Umgebung" einen "reward" ( ein "reward" ist eine Art Belohung, die die "Umgebung" vergibt) auf die gegebene Aktion geben, wird die Formel: 
- ''ß * "reward" / (Anzahl der "classifier" im "action set" A)'' angewandt.
+    * ß * "reward" / (Anzahl der "classifier" im "action set" (A))
+ 
+ angewandt.
  Das Ergebnis wird zu der "quality" in jedem "classfier" in der "action set" Liste (A) hinzuaddiert.
 
 
  * Als letztes werden die "classfier" im "Gedächtnis" verändert.
  Dazu wird folgende Formel verwendet:
- ''"B" * Gamma / (Anzahl der Elemente des "action set" A (T-1)) ''
- Im nächsten Schritt wird das Ergebnis zu der "quality" jedes "classfier"´s in A (T-1) hinzu addiert.
+   * B * Gamma / (Anzahl der Elemente des "action set" A (T-1))
+ 
+ Im nächsten Schritt wird das Ergebnis zu der "quality" jedes "classfier"´s in (A (T-1)) hinzu addiert.
  (Anmerkung: die Elemente aus dem "Gedächtnis sind eine referenzi auf die den Elementen aus der aktuellen "classifier" Liste (P))
 
 
