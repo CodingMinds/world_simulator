@@ -93,7 +93,7 @@ def add_classifier((condition, action, strength)):
 	
 	if len(classifiers) > 1:
 		print >> sys.stder, "datastructure corrupted !"
-		sus.exit()
+		sys.exit()
 	
 	if len(classifiers) > 0:
 		fixed_strength = sum(map(lambda (c, a, s): s, classifiers)) + strength
