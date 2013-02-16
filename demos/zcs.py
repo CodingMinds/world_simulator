@@ -419,7 +419,7 @@ while -1 == iterations or iterations > 0:
 			
 			# remember, remember, ..
 			if ignore_repetitions and len(last_classifiers) > 0:
-				(last_c, last_a, last_s) = last_classifiers[-1]
+				(last_c, last_a, last_s) = last_classifiers[-1][0]
 				if last_c != condition and last_a != action:
 					last_classifiers.append(A)
 			else:
