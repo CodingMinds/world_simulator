@@ -119,7 +119,7 @@ Some helper functions which mostly used in more than one module.
 ## Default behaviour
 
 The system is initialized with three example environments which show all
-possible objects, expect other agents.
+possible objects, except other agents.
 
 To load your own environment connect to the control port (see Example
 usage) and use the commands 'world' and 'map' to load an existing
@@ -417,7 +417,7 @@ the ctrl port to get the whole environment. (deprecated)
 #### Admin
 
 world list  
-world spawn ASCII_REPRESENTATION? 
+world spawn ASCII_REPRESENTATION?  
 world load ID  
 world destroy ID
 
